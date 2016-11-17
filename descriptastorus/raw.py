@@ -26,10 +26,12 @@ class RawStore:
 
         if readOnly:
             self._f = open(fname, 'rb')
+            access = mmap.ACCESS_READ
         else:
             self._f = open(fname, 'r+b')
+            access = mmap.ACCESS_WRITE
             
-        self.f = mmap.mmap(self._f.fileno(), 0)
+        self.f = mmap.mmap(self._f.fileno(), 0, access=access)
 
     def get(self, idx):
         """Return the row at idx"""
