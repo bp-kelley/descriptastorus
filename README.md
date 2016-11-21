@@ -71,7 +71,8 @@ Installation
 
 
 TODO:
-  fast forwards iteration (fast now, but could be faster)
-  faster append-only store creation
-  Fast molecule indexing/lookup (almost done)
-  Output to bcolz pandas backend
+
+  * fast forwards iteration (fast now, but could be faster)
+  * faster append-only store creation
+  * Fast molecule indexing/lookup (almost done)
+  * Output to bcolz pandas backend
