@@ -22,34 +22,52 @@ numpy types to store and also the number of rows to initialize.
 
 Example:
 
+```
  >>> from descriptastorus import raw
  >>> import numpy
  >>> columns = [('exactmw', numpy.float64), ('numRotatableBonds', numpy.int32) ...]
  >>> r = raw.MakeRawStore( columns, 2, "magma")
  >>> r.putRow(0, [45.223, 3])
-
+```
 
 Using an existing store
 -----------------------
 
 After creation, to open the read only storage:
 
+```
  >>> r = raw.RawStore("magma")
+```
 
 Get the number or rows:
 
+```
  >>> r.N
  2
+```
 
 Get the column names:
 
+```
  >>> r.colnames
  ['exactmw', 'numRotatableBonds']
+```
 
 Extract the column:
 
+```
 >>> r.get(0)
- [45.223, 3]
+[45.223, 3]
+```
+
+Installation
+============
+
+```
+  git clone https://bitbucket.org/novartisnibr/rdkit-descriptastorus.git
+  cd rdkit-descriptastorus
+  python setup.py install
+```
 
 
 TODO:
