@@ -126,11 +126,12 @@ class RawStore:
         bytes = struct.pack(self.pack_format, *row)
         self.f.write(bytes)
 
-def MakeStore(cols, N, directory):
+def MakeStore(cols, N, directory, checkDirectoryExists=True):
     if not os.path.exists(directory):
         os.mkdir(directory)
     else:
-        raise IOError("Directory %r for raw store already exists"%directory)
+        if checkDirectoryExists:
+            raise IOError("Directory %r for raw store already exists"%directory)
 
     if not N:
         raise ValueError(
