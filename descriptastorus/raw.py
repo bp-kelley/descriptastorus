@@ -12,19 +12,27 @@ import pickle, numpy, os, mmap, struct
 
 # raw stores are little endian!
 
+class Mode:
+    READONLY = 0
+    WRITE = 1
+    APPEND = 2
+    
 class RawStore:
-    def __init__(self, directory, readOnly=True):
+    def __init__(self, directory, mode=Mode.READONLY):
         """Raw storage engine
         directory = existing directory to read or prepare the raw storage
         if N is None, an existing directory is created with N entries"""
         if not os.path.exists(directory):
             raise IOError("Directory %s for raw store does not exist"%
                           directory)
-        self.__dict__.update(
-            pickle.load(open(os.path.join(directory, "__rawformat__"))))
+        with open(os.path.join(directory, "__rawformat__"), 'rb') as rawformat:
+            self.__dict__.update(pickle.load(rawformat))
+            
         fname = self.fname = os.path.join(directory, "__store___")
 
-        if readOnly:
+        if mode == Mode.APPEND:
+            self.f = open(fname, 'wb')
+        elif mode == Mode.READONLY:
             self._f = open(fname, 'rb')
             access = mmap.ACCESS_READ
         else:
@@ -33,6 +41,10 @@ class RawStore:
             
         self.f = mmap.mmap(self._f.fileno(), 0, access=access)
 
+    def close(self):
+        self.f.close()
+        self._f.close()
+        
     def get(self, idx):
         """Return the row at idx"""
         offset = idx * self.rowbytes
@@ -99,9 +111,18 @@ class RawStore:
                 "data value only has %s entries, "
                 "raw store has %s columns"%(
                     len(row), len(self.dtypes)))
+
+        # checks row datatypes
         v = [dtype(v) for dtype,v in zip(self.dtypes, row)]
         offset = idx * self.rowbytes
         self.f.seek(offset,0)
+        bytes = struct.pack(self.pack_format, *row)
+        self.f.write(bytes)
+
+    def write(self, row):
+        """Writes row with no datatype checking to the end of the file.
+        Do not use with putRow/getRow
+        Rows must be written in the correct order"""
         bytes = struct.pack(self.pack_format, *row)
         self.f.write(bytes)
 
@@ -131,6 +152,9 @@ def MakeStore(cols, N, directory):
         elif dtype == numpy.uint8:
             type = "B"
             dtypes.append(int)
+        elif dtype == numpy.uint16:
+            type = "H"
+            dtypes.append(int)
         elif dtype == numpy.uint32:
             type = "I"
             dtypes.append(int)
@@ -152,24 +176,23 @@ def MakeStore(cols, N, directory):
     pack_format = "".join(types)
     rowbytes = len(struct.pack(pack_format,
                                *[d(0) for d in dtypes]))
-    pickle.dump(
-        {'rowbytes':rowbytes,
-         'pack_format':pack_format,
-         'colnames': names,
-         'dtypes': dtypes,
-         'N': N,
-     }, open(os.path.join(directory, "__rawformat__"), 'w'))
+    with open(os.path.join(directory, "__rawformat__"), 'wb') as rawformat:
+        pickle.dump(
+            {'rowbytes':rowbytes,
+             'pack_format':pack_format,
+             'colnames': names,
+             'dtypes': dtypes,
+             'N': N,
+         }, rawformat)
 
     # Make the storage
     fname = os.path.join(directory, "__store___")
     f = open(fname, 'wb')
     f.seek(rowbytes*N)
-    f.write('\0')
+    f.write(b'\0')
     f.close()
 
     # return the store
-    return RawStore(directory, readOnly=False)
-                     
-         
+    return RawStore(directory, Mode.WRITE)
     
     
