@@ -1,4 +1,4 @@
-from DescriptorGenerator import *
-from rdDescriptors import *
+from .DescriptorGenerator import *
+from .rdDescriptors import *
 
         

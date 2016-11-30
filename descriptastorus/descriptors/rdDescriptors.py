@@ -6,7 +6,7 @@ Please modify as necessary
 from rdkit import Chem
 from rdkit.Chem import rdMolDescriptors as rd
 import numpy
-from DescriptorGenerator import DescriptorGenerator
+from .DescriptorGenerator import DescriptorGenerator
 
 import sys
 
@@ -40,6 +40,7 @@ class RDKitMorgan3CountsAndDescriptors(DescriptorGenerator):
         try:
             m = Chem.MolFromSmiles(smiles)
         except:
+            raise
             return None
 
         if m == None:
@@ -48,5 +49,4 @@ class RDKitMorgan3CountsAndDescriptors(DescriptorGenerator):
         counts = list(rd.GetHashedMorganFingerprint(m, radius=3, nBits=2048))
         counts = [ clip(x,smiles) for x in counts ]
         counts.extend(self.props.ComputeProperties(m))
-
         return counts
