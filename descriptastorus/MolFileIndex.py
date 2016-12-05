@@ -1,14 +1,30 @@
-import os, numpy
+from __future__ import print_function
+import os, numpy, sys
 from . import raw
+import shutil, pickle
+
+def SDFNameGetter(buffer):
+    return buffer.split("\n")[0].strip()
+
+
+namefxns = {None: None, "molfile": SDFNameGetter}
+
+def nameOptFile(indexdir):
+    return os.path.join(indexdir, "__opts__")
 
 class MolFileIndex:
     """Index for a molecule file to provide random access to the internal molecules.
     """
     
-    def __init__(self, filename, indexDirectory,
-                 smilesColumn=-1, nameColumn=-1, hasHeader=False, sep=None,
-                 nameFxn=None
-             ):
+    def __init__(self,
+                 indexDirectory):
+#                 filename=None,
+#                 smilesColumn=-1, nameColumn=-1,
+#                 hasHeader=False, sep=None,
+#                 nameFxnName=None,
+#                 indexSmiles=True,
+#                 indexInchi=True
+#             ):
         """Fast random access to a smiles file by row index
         filename           = indexed file
         rawStoreDirectory  = RawStore of the indices
@@ -24,19 +40,32 @@ class MolFileIndex:
         -----------
         See MakeSmilesIndex and MakeSDF Index to make indexed files
         """
+        optfile = nameOptFile(indexDirectory)
+
+        if os.path.exists(optfile):
+            options = pickle.load(open(optfile))
+        else:
+            raise IOError("Not a molfile index")
+
+
         self.db = raw.RawStore(indexDirectory)
-        self.filename = filename
-        self.hasHeader = hasHeader
-        self.smilesColumn = smilesColumn
-        self.nameColumn = nameColumn
-        self.nameFxn = nameFxn
+
+        self.filename = options['filename']
+        self.hasHeader = options['hasHeader']
+        self.smilesColumn = options['smilesColumn']
+        self.nameColumn = options['nameColumn']
+        self.sep = options['sep']
+        self.nameFxnName = options['nameFxnName']
+        
+        self.nameFxn = namefxns[self.nameFxnName]
         
         if self.hasHeader:
             self.N = self.db.N - 3
         else:
             self.N = self.db.N - 2
-        self.sep = sep
+
         # mmap?
+        self.filename = os.path.join(indexDirectory, self.filename)        
         self.f = open(self.filename, 'r')
         
         if self.hasHeader:
@@ -154,44 +183,60 @@ def index(fname, word):
                 break
     
 def MakeSmilesIndex(filename, dbdir, hasHeader, smilesColumn, nameColumn=-1, sep=None):
-    """Make smiles index -> index a smiles file for random access"""
+    """Make smiles index -> index a smiles file for random access
+    n.b. Copies file over to index"""
     sz = os.path.getsize(filename)
     
     N = simplecount(filename)
-    if N < 2**8:
+
+    if sz < 2**8:
         dtype = numpy.uint8
-    elif N < 2**16:
+    elif sz < 2**16:
         dtype = numpy.uint16
-    elif N < 2**32:
+    elif sz < 2**32:
         dtype = numpy.uint32
     else:
         dtype = numpy.uint64
 
     db = raw.MakeStore([("index", dtype)], N+1, dbdir)
+    cpfile = os.path.join(dbdir, os.path.basename(filename))
+    print("Copying molecule file to index...", file=sys.stderr)
+    shutil.copy(filename, cpfile)
 
+    options = {'filename': os.path.basename(filename),
+               'hasHeader': hasHeader,
+               'smilesColumn': smilesColumn,
+               'nameColumn': nameColumn,
+               'nameFxnName': None,
+               'sep': sep}
+
+    # save the options
+    optfile = nameOptFile(dbdir)
+
+    pickle.dump(options, open(optfile,'w'))
+    
     # first row
     #  TODO sniff newline...
     db.putRow(0, [0])
-    for i,pos in enumerate(index(filename, b"\n")):
+    for i,pos in enumerate(index(cpfile, b"\n")):
         db.putRow(i+1, [pos+1])
 
-    return MolFileIndex(filename, dbdir, smilesColumn,
-                        nameColumn=nameColumn, hasHeader=hasHeader,
-                        sep=sep)
-
-def SDFNameGetter(buffer):
-    return buffer.split("\n")[0].strip()
+    return MolFileIndex(dbdir)
+#, os.path.basename(filename), smilesColumn,
+#                        nameColumn=nameColumn, hasHeader=hasHeader,
+#                        sep=sep)
 
 def MakeSDFIndex(filename, dbdir):
     """Make smiles index -> index a smiles file for random access"""
+    sadf
     sz = os.path.getsize(filename)
     
     N = simplecount(filename)
-    if N < 2**8:
+    if sz < 2**8:
         dtype = numpy.uint8
-    elif N < 2**16:
+    elif sz < 2**16:
         dtype = numpy.uint16
-    elif N < 2**32:
+    elif sz < 2**32:
         dtype = numpy.uint32
     else:
         dtype = numpy.uint64

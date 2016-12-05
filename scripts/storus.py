@@ -18,6 +18,7 @@ Options:
 """
 from __future__ import print_function
 from descriptastorus.descriptors import rdDescriptors
+from rdkit.Chem import AllChem
 
 import sys
 from rdkit import rdBase
@@ -35,11 +36,37 @@ def process( job ):
 
     return res
 
+def processInchi( job ):
+    res = []
+    for index,smiles in job:
+        try:
+            m = AllChem.MolFromSmiles(smiles)
+        except:
+            continue
+        if not m:
+            continue
+        
+        counts = props.processMol(m, smiles)
+        inchi = AllChem.MolToInchi(m)
+        key = AllChem.InchiToInchiKey(inchi)
+
+        if not counts:
+            continue
+        res.append((index,counts,inchi,key))
+
+    return res
+
+
+
 if __name__ == "__main__":
 
     import argparse, os, shutil
     from descriptastorus import MolFileIndex, raw
-    
+    try:
+        import kyotocabinet
+    except:
+        kyotocabinet = None
+        
     parser = argparse.ArgumentParser()
     parser.add_argument("smilesfile",
                         help="file containing smiles strings")
@@ -49,16 +76,30 @@ if __name__ == "__main__":
     parser.add_argument("--hasHeader", action="store_true",
                         help="Indicate whether the smiles file has a header column")
 
+    parser.add_argument("--index-inchikey", action="store_true",
+                        help="Indicate whether the smiles file has a header column")
+
+    parser.add_argument("--index-smiles", action="store_true",
+                        help="Indicate whether the smiles file has a header column")
+    
     parser.add_argument("--smilesColumn", default=0,
                         help="Row index (or header name if the file has a header) for the smiles column")
     parser.add_argument("--nameColumn", default=-1,
                         help="Row index (or header name if the file has a header) for the name column")
+    
     parser.add_argument("--seperator", default="\t",
                         help="Row index (or header name if the file has a header) for the name column")
     
 
     args = parser.parse_args()
+    print (args)
 
+    inchiKey = args.index_inchikey
+    if inchiKey and not kyotocabinet:
+        print("Indexing inchikeys requires kyotocabinet, please install kyotocabinet",
+              file=sys.stderr)
+        sys.exit(1)
+    
     # make the storage directory
     if os.path.exists(args.storage):
         raise IOError("Directory for descriptastorus already exists: %s"%args.storage)
@@ -66,13 +107,8 @@ if __name__ == "__main__":
     os.mkdir(args.storage)
     # index the molfile
     indexdir = os.path.join(args.storage, "__molindex__")
-    os.mkdir(indexdir)
-    print("Copying smiles file to storage...", file=sys.stderr)
-    smilesfile = os.path.join(indexdir, "smiles.smi")
-    shutil.copy(args.smilesfile, smilesfile)
 
-    index = os.path.join(indexdir, "index")
-    sm = MolFileIndex.MakeSmilesIndex(smilesfile, index,
+    sm = MolFileIndex.MakeSmilesIndex(args.smilesfile, indexdir,
                                       sep=args.seperator,
                                       hasHeader = args.hasHeader,
                                       smilesColumn = args.smilesColumn,
@@ -82,10 +118,14 @@ if __name__ == "__main__":
                                       
     import multiprocessing
     import time, os, sys, numpy
-    
+        
     numstructs = sm.N
     s = raw.MakeStore(props.GetColumns(), sm.N, args.storage, checkDirectoryExists=False)
-    
+    if args.index_inchikey:
+        cabinet = kyotocabinet.DB()
+        inchi = os.path.join(args.storage, "inchi.kch")
+        cabinet.open(inchi, kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)
+        
     num_cpus = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(num_cpus)
     print ("Number of molecules to process", numstructs)
@@ -106,9 +146,13 @@ if __name__ == "__main__":
             if jobs:
                 joblist.append(jobs)
         if not joblist:
-            break        
-
-        results = pool.map(process, joblist)
+            break
+        
+        if args.index_inchikey:
+            results = pool.map(processInchi, joblist)
+        else:
+            results = pool.map(process, joblist)
+            
 
         for result in results:
             if not badColumnWarning and len(result) == 0:
@@ -116,9 +160,23 @@ if __name__ == "__main__":
                 print("WARNING: no molecules processed in batch, check the smilesColumn", file=sys.stderr)
                 print("WARNING: First 10 smiles:\n", file=sys.stderr)
                 print("\n".join([sm.getMol(i) for i in range(0, min(sm.N,10))]), file=sys.stderr)
+
+            if args.index_inchikey:
+                for i,v,inchi,key in result:
+                    s.putRow(i, v)
+                    if key not in cabinet:
+                        cabinet[key] = i
+                    else:
+                        v = cabinet[key]
+                        if type(v) == type([]):
+                            v.append(i)
+                        else:
+                            v = [v, i]
+                        cabinet[key] = v
                 
-            for i,v in result:
-                s.putRow(i, v)
+            else:
+                for i,v in result:
+                    s.putRow(i, v)
                 
         print("Done with %s out of %s"%(count, sm.N))
     

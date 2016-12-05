@@ -29,6 +29,12 @@ class RDKitMorgan3CountsAndDescriptors(DescriptorGenerator):
         """Returns [(name, numpy.dtype), ...] for all columns being computed"""
         return self.columns
 
+    def processMol(self, m, smiles):
+        counts = list(rd.GetHashedMorganFingerprint(m, radius=3, nBits=2048))
+        counts = [ clip(x,smiles) for x in counts ]
+        counts.extend(self.props.ComputeProperties(m))
+        return counts
+        
     def process(self, smiles):
         """smiles
         generate descriptors from a smiles string using the specified
@@ -40,13 +46,10 @@ class RDKitMorgan3CountsAndDescriptors(DescriptorGenerator):
         try:
             m = Chem.MolFromSmiles(smiles)
         except:
-            raise
             return None
 
         if m == None:
             return None
 
-        counts = list(rd.GetHashedMorganFingerprint(m, radius=3, nBits=2048))
-        counts = [ clip(x,smiles) for x in counts ]
-        counts.extend(self.props.ComputeProperties(m))
-        return counts
+        return self.processMol(m, smiles)
+
