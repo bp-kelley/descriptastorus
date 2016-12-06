@@ -9,13 +9,51 @@ An example data set is located at:
  /db/cix/descriptastorus/magma
  
 It contains (for all of magma) the folded morgan counts at radius=3 and nBits=2048
-and all of the RDKit 2D descriptors implemented at the C++ layer.
+and all of the RDKit 2D descriptors implemented at the C++ layer as well as
+the inchiKey and NVP indices.
+
+[n.b.] kyotocabinet is required to read the inchiKey and name indices
+  This should be installed in your environment
+   (conda install kyotocabinet should do the trick)
+
+
 
 Usage
 =====
 
-Creating a store
-----------------
+Using the magma descriptastore:
+
+```
+from descriptastorus import DescriptaStore
+d = DescriptaStore("/db/cix/descriptastorus/magma")
+
+# print out the column names
+print(d.descriptors().colnames)
+
+# this will take a while!
+for moldata, descriptors in d:
+    smiles, name = moldata
+    descriptors # is a numpy array of data morgan3 counts + rdkit descriptors
+
+# to iterate through only the descriptors:
+for descriptors in d.descriptors():
+    ...
+
+
+# if indexed by inchikey
+rows = []
+for key in inchiKey:
+    rows.extend( d.lookupInchiKey(key) )
+
+rows.sort()
+for row in descriptors:
+    descriptors = d.descriptors().get(row)
+    ...
+```
+
+    
+Creating a Raw store
+--------------------
 
 The storage system is quite simple.  It is made by specifying the column names and
 numpy types to store and also the number of rows to initialize.
