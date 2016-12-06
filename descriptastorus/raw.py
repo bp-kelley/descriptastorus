@@ -8,7 +8,8 @@ row = r.get(100000)
 
 Data can be updated using putRow when opened in append mode.
 """
-import pickle, numpy, os, mmap, struct
+from __future__ import print_function
+import pickle, numpy, os, mmap, struct, sys
 
 # raw stores are little endian!
 
@@ -16,6 +17,16 @@ class Mode:
     READONLY = 0
     WRITE = 1
     APPEND = 2
+
+class RawStoreIter:
+    def __init__(self, raw):
+        self.raw = raw
+        self.i = -1
+    def next(self):
+        self.i += 1
+        if self.i == self.raw.N:
+            raise StopIteration()
+        return self.raw.get(self.i)
     
 class RawStore:
     def __init__(self, directory, mode=Mode.READONLY):
@@ -44,11 +55,21 @@ class RawStore:
     def close(self):
         self.f.close()
         self._f.close()
-        
+
+    def __len__(self):
+        return self.N
+    
+    def __iter__(self):
+        return RawStoreIter(self)
+    
     def get(self, idx):
         """Return the row at idx"""
         offset = idx * self.rowbytes
-        self.f.seek(offset,0)
+        try:
+            self.f.seek(offset,0)
+        except ValueError:
+            print("Could not seek to index %d at offset %f offset"%(idx, offset), file=sys.stderr)
+            raise IndexError("out or range %d"%idx)
         bytes = self.f.read(self.rowbytes)
         return struct.unpack(self.pack_format, bytes)
 
@@ -116,7 +137,11 @@ class RawStore:
         v = [dtype(v) for dtype,v in zip(self.dtypes, row)]
         offset = idx * self.rowbytes
         self.f.seek(offset,0)
-        bytes = struct.pack(self.pack_format, *row)
+        try:
+            bytes = struct.pack(self.pack_format, *row)
+        except struct.error:
+            print("Can't write row %r"%(row), file=sys.stderr)
+            raise
         self.f.write(bytes)
 
     def write(self, row):
