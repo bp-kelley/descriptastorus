@@ -88,8 +88,15 @@ class DescriptaStore:
         """name -> returns the index of the given name"""
         if not self.name:
             raise ValueError("Name index not available")
+
+        try:
+            row = int(self.name[name])
+        except:
+            raise IndexError("Name %r not found"%name)
         
-        return int(self.name[name])
+        if self.index.hasHeader:
+            return row - 1
+        return row
     
     def lookupInchiKey(self, key):
         """key -> returns the indicies of the inchi key"""
