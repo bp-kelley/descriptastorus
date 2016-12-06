@@ -93,8 +93,8 @@ class DescriptaStore:
     
     def lookupInchiKey(self, key):
         """key -> returns the indicies of the inchi key"""
-        if not self.inchikeykey:
+        if not self.inchikey:
             raise ValueError("Inchi index not available")
         
-        return eval(self.inchikeykey[key])
+        return eval(self.inchikey[key])
     
