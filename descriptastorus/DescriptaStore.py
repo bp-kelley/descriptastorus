@@ -95,6 +95,8 @@ class DescriptaStore:
         """key -> returns the indicies of the inchi key"""
         if not self.inchikey:
             raise ValueError("Inchi index not available")
-        
-        return eval(self.inchikey[key])
+        res =  eval(self.inchikey[key])
+        if self.index.hasHeader:
+            res = [x-1 for x in res]
+        return res
     
