@@ -123,8 +123,14 @@ if __name__ == "__main__":
     s = raw.MakeStore(props.GetColumns(), sm.N, args.storage, checkDirectoryExists=False)
     if args.index_inchikey:
         cabinet = kyotocabinet.DB()
-        inchi = os.path.join(args.storage, "inchi.kch")
+        inchi = os.path.join(args.storage, "inchikey.kch")
         cabinet.open(inchi, kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)
+
+    if args.nameColumn != -1:
+        name_cabinet = kyotocabinet.DB()
+        name = os.path.join(args.storage, "name.kch")
+        name_cabinet.open(name, kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)
+        
         
     num_cpus = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(num_cpus)
@@ -132,9 +138,9 @@ if __name__ == "__main__":
     
     done = False
     count = 0
-    batchsize = 1000
+    batchsize = 10000
     badColumnWarning = False
-    
+    inchies = {}
     while 1:
         lastcount = count
         joblist = []
@@ -157,28 +163,41 @@ if __name__ == "__main__":
         for result in results:
             if not badColumnWarning and len(result) == 0:
                 badColumnWarning = True
-                print("WARNING: no molecules processed in batch, check the smilesColumn", file=sys.stderr)
-                print("WARNING: First 10 smiles:\n", file=sys.stderr)
-                print("\n".join([sm.getMol(i) for i in range(0, min(sm.N,10))]), file=sys.stderr)
+                print("WARNING: no molecules processed in batch, check the smilesColumn",
+                      file=sys.stderr)
+                print("WARNING: First 10 smiles:\n",
+                      file=sys.stderr)
+                print("\n".join([sm.getMol(i) for i in range(0, min(sm.N,10))]),
+                      file=sys.stderr)
 
             if args.index_inchikey:
                 for i,v,inchi,key in result:
                     s.putRow(i, v)
-                    if key not in cabinet:
-                        cabinet[key] = i
+                    if inchi in inchies:
+                        inchies[key].append(i)
                     else:
-                        v = cabinet[key]
-                        if type(v) == type([]):
-                            v.append(i)
-                        else:
-                            v = [v, i]
-                        cabinet[key] = v
+                        inchies[key] = [i]
+
+                    if args.nameColumn != -1:
+                        name = sm.getName(i)
+                        name_cabinet[name] = i
                 
             else:
                 for i,v in result:
                     s.putRow(i, v)
+                    name = sm.getName(i)
+                    if name in name_cabinet:
+                        print("WARNING: name %s duplicated at molecule %d and %d"%(
+                            name, name_cabinet[name], i))
+                    else:
+                        name_cabinet[name] = i
                 
-        print("Done with %s out of %s"%(count, sm.N))
+        print("Done with %s out of %s"%(count, sm.N), file=sys.stderr)
+
+    if args.index_inchikey:
+        print("Indexing inchies", file=sys.stderr)
+        for k in sorted(inchies):
+            cabinet[k] = repr(inchies[k])
     
 
         
