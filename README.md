@@ -14,7 +14,7 @@ the inchiKey and NVP indices.
 
 [n.b.] kyotocabinet is required to read the inchiKey and name indices
   This should be installed in your environment
-   (conda install kyotocabinet should do the trick)
+   (pip install kyotocabinet should do the trick)
 
 
 
