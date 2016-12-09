@@ -1,8 +1,8 @@
 DescriptaStorus
 ===============
 
-The descriptastorus provides fast random access to rows of properties suitable for
-machine learning.
+The descriptastorus provides (1) fast random access to rows of properties suitable for
+machine learning and (2) fast random access to indexed molecule files
 
 An example data set is located at:
 
@@ -13,13 +13,61 @@ and all of the RDKit 2D descriptors implemented at the C++ layer as well as
 the inchiKey and NVP indices.
 
 [n.b.] kyotocabinet is required to read the inchiKey and name indices
-  This should be installed in your environment
-   (pip install kyotocabinet should do the trick)
+  This should be installed in your environment.
+
+There are three basic ways to use DescriptaStorus:
+
+  1) Make a use MolFileIndex
+  2) Make a DescriptaStore using a script
+  3) Using a DescriptaStore to access properties
+
+Make a MolFileIndex
+===================
+
+If the smiles file has a header
+
+>>> from descriptastorus import MolFileIndex
+>>> index = MolFileIndex.MakeSmilesIndex("data/test1.smi", "test1", hasHeader=True,
+...                                      smilesColumn="smiles", nameColumn="name")
+>>> index.N
+13
+>>> index.getMol(12)
+'c1ccccc1CCCCCCCCCCCC'
+>>> index.getName(12)
+13
+
+If the smiles file has no header
+
+>>> from descriptastorus import MolFileIndex
+>>> index = MolFileIndex.MakeSmilesIndex("data/test2.smi", "test2", hasHeader=False,
+...                                      smilesColumn=1, nameColumn=0)
+>>> index.N
+13
+>>> index.getMol(12)
+'c1ccccc1CCCCCCCCCCCC'
+>>> index.getName(12)
+13
+
+Use a MolFileIndex
+==================
+
+Using a molfile index is fairly simple:
+
+>>> from descriptastorus import MolFileIndex
+>>> idx = MolFileIndex("/db/cix/descriptastorus/test")
+>>> idx.get(1000)
+['CC(C)(O)c1ccc(nc1)c4ccc3C=CN(Cc2ccc(F)cc2)c3c4', 'NVP-LEI449']
+>>> idx.getName(1000)
+'NVP-LEI449'
+>>> idx.getMol(1000)
+CC(C)(O)c1ccc(nc1)c4ccc3C=CN(Cc2ccc(F)cc2)c3c4'
 
 
+Making a DescriptaStore
+=======================
 
-Usage
-=====
+Using a DescriptaStore
+======================
 
 Using the magma descriptastore:
 
