@@ -74,13 +74,13 @@ if __name__ == "__main__":
                         help="directory in which to store the descriptors")
 
     parser.add_argument("--hasHeader", action="store_true",
-                        help="Indicate whether the smiles file has a header column")
+                        help="Indicate whether the smiles file has a header row")
 
     parser.add_argument("--index-inchikey", action="store_true",
-                        help="Indicate whether the smiles file has a header column")
+                        help="Optionally index the descriptors with inchi keys")
 
-    parser.add_argument("--index-smiles", action="store_true",
-                        help="Indicate whether the smiles file has a header column")
+    #parser.add_argument("--index-smiles", action="store_true",
+    #                    help="Indicate whether the smiles file has a header column")
     
     parser.add_argument("--smilesColumn", default=0,
                         help="Row index (or header name if the file has a header) for the smiles column")
