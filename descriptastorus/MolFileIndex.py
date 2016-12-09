@@ -122,7 +122,8 @@ class MolFileIndex:
         end = self.db.get(idx+1)[0]
         self.f.seek(start,0)
         buf = self.f.read(end-start-1)
-        return buf.split(self.sep)
+        if self.smilesColumn != -1:
+            return buf.split(self.sep)
         return buf
 
     def header(self):
@@ -197,7 +198,7 @@ def MakeSmilesIndex(filename, dbdir, hasHeader, smilesColumn, nameColumn=-1, sep
     else:
         dtype = numpy.uint64
 
-    db = raw.MakeStore([("index", dtype)], N+1, dbdir)
+    db = raw.MakeStore([("index", dtype)], N+2, dbdir)
     cpfile = os.path.join(dbdir, os.path.basename(filename))
     print("Copying molecule file to index...", file=sys.stderr)
     shutil.copy(filename, cpfile)
