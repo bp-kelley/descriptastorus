@@ -17,15 +17,16 @@ the inchiKey and NVP indices.
 
 There are three basic ways to use DescriptaStorus:
 
-  1) Make a use MolFileIndex
-  2) Make a DescriptaStore using a script
-  3) Using a DescriptaStore to access properties
+  1. Make a use MolFileIndex
+  2. Make a DescriptaStore using a script
+  3. Using a DescriptaStore to access properties
 
 Make a MolFileIndex
 ===================
 
 If the smiles file has a header
 
+```
 >>> from descriptastorus import MolFileIndex
 >>> index = MolFileIndex.MakeSmilesIndex("data/test1.smi", "test1", hasHeader=True,
 ...                                      smilesColumn="smiles", nameColumn="name")
@@ -35,9 +36,11 @@ If the smiles file has a header
 'c1ccccc1CCCCCCCCCCCC'
 >>> index.getName(12)
 13
+```
 
 If the smiles file has no header
 
+```
 >>> from descriptastorus import MolFileIndex
 >>> index = MolFileIndex.MakeSmilesIndex("data/test2.smi", "test2", hasHeader=False,
 ...                                      smilesColumn=1, nameColumn=0)
@@ -47,12 +50,14 @@ If the smiles file has no header
 'c1ccccc1CCCCCCCCCCCC'
 >>> index.getName(12)
 13
+```
 
 Use a MolFileIndex
 ==================
 
 Using a molfile index is fairly simple:
 
+```
 >>> from descriptastorus import MolFileIndex
 >>> idx = MolFileIndex("/db/cix/descriptastorus/test")
 >>> idx.get(1000)
@@ -61,13 +66,14 @@ Using a molfile index is fairly simple:
 'NVP-LEI449'
 >>> idx.getMol(1000)
 CC(C)(O)c1ccc(nc1)c4ccc3C=CN(Cc2ccc(F)cc2)c3c4'
-
+```
 
 Making a DescriptaStore
 =======================
 
 see scripts/storus.py for more details:
 
+```
 usage: storus.py [-h] [--hasHeader] [--index-inchikey]
                  [--smilesColumn SMILESCOLUMN] [--nameColumn NAMECOLUMN]
                  [--seperator SEPERATOR]
@@ -91,6 +97,7 @@ optional arguments:
                         Row index (or header name if the file has a header)
                         for the name column
 
+```
 
 Using a DescriptaStore
 ======================
@@ -125,6 +132,8 @@ for row in descriptors:
     ...
 ```
 
+Doing things yourself
+=====================
     
 Creating a Raw store
 --------------------
