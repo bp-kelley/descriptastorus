@@ -66,6 +66,32 @@ CC(C)(O)c1ccc(nc1)c4ccc3C=CN(Cc2ccc(F)cc2)c3c4'
 Making a DescriptaStore
 =======================
 
+see scripts/storus.py for more details:
+
+usage: storus.py [-h] [--hasHeader] [--index-inchikey]
+                 [--smilesColumn SMILESCOLUMN] [--nameColumn NAMECOLUMN]
+                 [--seperator SEPERATOR]
+                 smilesfile storage
+
+positional arguments:
+  smilesfile            file containing smiles strings
+  storage               directory in which to store the descriptors
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --hasHeader           Indicate whether the smiles file has a header row
+  --index-inchikey      Optionally index the descriptors with inchi keys
+  --smilesColumn SMILESCOLUMN
+                        Row index (or header name if the file has a header)
+                        for the smiles column
+  --nameColumn NAMECOLUMN
+                        Row index (or header name if the file has a header)
+                        for the name column
+  --seperator SEPERATOR
+                        Row index (or header name if the file has a header)
+                        for the name column
+
+
 Using a DescriptaStore
 ======================
 
