@@ -4,9 +4,11 @@ Please modify as necessary
 """
 
 from rdkit import Chem
+from rdkit.Chem import Descriptors
 from rdkit.Chem import rdMolDescriptors as rd
 import numpy
 from .DescriptorGenerator import DescriptorGenerator
+import logging
 
 import sys
 
@@ -17,22 +19,30 @@ def clip(v, name):
     return v
         
 
-class RDKitMorgan3CountsAndDescriptors(DescriptorGenerator):
-    def __init__(self, props=rd.Properties()):
+class MorganCounts(DescriptorGenerator):
+    """Computes Morgan3 bitvector counts"""
+    NAME = "Morgan%sCounts"
+    def __init__(self, radius=3, nbits=2048):
+        if radius == 3 and nbits == 2048:
+            self.NAME = self.NAME % "3"
+        else:
+            self.NAME = self.NAME % ("%s-%s"%radius,nbits)
+            
+        DescriptorGenerator.__init__(self)
         # specify names and numpy types for all columns
-        morgan = [("m3-%d"%d, numpy.uint8) for d in range(2048)]
-        descriptors = [(p, numpy.float64) for p in props.GetPropertyNames()]
-        self.columns = morgan + descriptors
-        self.props = props
+        self.radius = radius
+        self.nbits = nbits
+        morgan = [("m3-%d"%d, numpy.uint8) for d in range(nbits)]
+        self.columns = morgan
 
     def GetColumns(self):
         """Returns [(name, numpy.dtype), ...] for all columns being computed"""
         return self.columns
 
     def processMol(self, m, smiles):
-        counts = list(rd.GetHashedMorganFingerprint(m, radius=3, nBits=2048))
+        counts = list(rd.GetHashedMorganFingerprint(m,
+                                                    radius=self.radius, nBits=self.nbits))
         counts = [ clip(x,smiles) for x in counts ]
-        counts.extend(self.props.ComputeProperties(m))
         return counts
         
     def process(self, smiles):
@@ -53,3 +63,43 @@ class RDKitMorgan3CountsAndDescriptors(DescriptorGenerator):
 
         return self.processMol(m, smiles)
 
+MorganCounts()
+
+FUNCS = {name:func for name, func in Descriptors.descList}
+def applyFunc(name, m):
+    try:
+        return FUNCS[name](m)
+    except:
+        logging.exception("function application failed (%s->%s)",
+            name, Chem.MolToSmiles(m))
+                       
+        return 0.0
+
+            
+class RDKit2D(DescriptorGenerator):
+    """Computes all RDKit Descriptors"""
+    NAME = "RDKit2D"
+    def __init__(self, properties=None):
+        DescriptorGenerator.__init__(self)
+        # specify names and numpy types for all columns
+        if not properties:
+            self.columns = [ (name, numpy.float64) for name,func in Descriptors.descList ]
+        else:
+            columns = self.columns = []
+            for p in properties:
+                if p in FUNCS:
+                    columns.append((name, numpy.float64))
+                else:
+                    raise KeyError("Unable to find specified property %s"%p)
+        
+
+
+    def GetColumns(self):
+        """Returns [(name, numpy.dtype), ...] for all columns being computed"""
+        return self.columns
+
+    def processMol(self, m, smiles):
+        return [ applyFunc(name, m) for name, _ in self.columns ]
+    
+
+RDKit2D()
