@@ -1,35 +1,21 @@
 #!/bin/env python
 """storus
-
-Usage:
-  storus.py [-ha] [--smilesCol=] [--nameCol=] smiles_file storage_dir 
-
-Options:
-  -h has header line
-  -a append desctriptors to storage (see note below)
-  --smilesCol column index (starting at 0) or header name for the smiles column
-  --nameCol   column index (starting at 0) or header name for the name column
-
-  smiles_file
-  storage_dir
-
-  If appending descriptors to a storage, the header, smiles and name columns
-   must match the current storage.
+see Description below
 """
 from __future__ import print_function
-from descriptastorus.descriptors import rdDescriptors
+from descriptastorus.descriptors import MakeGenerator
 from rdkit.Chem import AllChem
 
 import sys
 from rdkit import rdBase
 rdBase.DisableLog("rdApp.*")
 
-props = rdDescriptors.RDKitMorgan3CountsAndDescriptors()
+props = []
 
 def process( job ):
     res = []
     for index,smiles in job:
-        counts = props.process(smiles)
+        counts = props[0].process(smiles)
         if not counts:
             continue
         res.append((index,counts))
@@ -46,7 +32,7 @@ def processInchi( job ):
         if not m:
             continue
         
-        counts = props.processMol(m, smiles)
+        counts = props[0].processMol(m, smiles)
         inchi = AllChem.MolToInchi(m)
         key = AllChem.InchiToInchiKey(inchi)
 
@@ -73,6 +59,7 @@ if __name__ == "__main__":
     parser.add_argument("storage",
                         help="directory in which to store the descriptors")
 
+    parser.add_argument("--descriptors", default="Morgan3Counts,RDKit2D")
     parser.add_argument("--hasHeader", action="store_true",
                         help="Indicate whether the smiles file has a header row")
 
@@ -92,7 +79,9 @@ if __name__ == "__main__":
     
 
     args = parser.parse_args()
-    print (args)
+
+    props.append( MakeGenerator(args.descriptors.split(",")) )
+    properties = props[0]
 
     inchiKey = args.index_inchikey
     if inchiKey and not kyotocabinet:
@@ -120,7 +109,8 @@ if __name__ == "__main__":
     import time, os, sys, numpy
         
     numstructs = sm.N
-    s = raw.MakeStore(props.GetColumns(), sm.N, args.storage, checkDirectoryExists=False)
+    s = raw.MakeStore(properties.GetColumns(), sm.N, args.storage,
+                      checkDirectoryExists=False)
     if args.index_inchikey:
         cabinet = kyotocabinet.DB()
         inchi = os.path.join(args.storage, "inchikey.kch")
