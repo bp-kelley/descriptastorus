@@ -137,8 +137,6 @@ class MolFileIndex:
         return a list if the data is a smiles like file
         returns a string buffer otherwise
         """
-        if self.hasHeader:
-            idx += 1
         return self._get(idx)
     
     def getMol(self, idx):

@@ -94,8 +94,6 @@ class DescriptaStore:
         except:
             raise IndexError("Name %r not found"%name)
         
-        if self.index.hasHeader:
-            return row - 1
         return row
     
     def lookupInchiKey(self, key):
@@ -103,7 +101,5 @@ class DescriptaStore:
         if not self.inchikey:
             raise ValueError("Inchi index not available")
         res =  eval(self.inchikey[key])
-        if self.index.hasHeader:
-            res = [x-1 for x in res]
         return res
     
