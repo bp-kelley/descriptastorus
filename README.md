@@ -123,12 +123,13 @@ for descriptors in d.descriptors():
 
 # if indexed by inchikey
 rows = []
-for key in inchiKey:
+for key in inchiKeys:
     rows.extend( d.lookupInchiKey(key) )
 
 rows.sort()
-for row in descriptors:
+for row in rows:
     descriptors = d.descriptors().get(row)
+    smiles, name = d.molIndex().get(row)
     ...
 ```
 
