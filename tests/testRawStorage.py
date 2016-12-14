@@ -1,6 +1,8 @@
 import unittest
 from descriptastorus import raw
 from descriptastorus.descriptors import rdDescriptors
+from descriptastorus.descriptors import MakeGenerator
+
 import os, shutil
 
 class TestCase(unittest.TestCase):
@@ -10,13 +12,13 @@ class TestCase(unittest.TestCase):
             if os.path.exists(directory):
                 shutil.rmtree(directory)
 
-            descriptors = rdDescriptors.RDKitMorgan3CountsAndDescriptors()
-            N=255
+            descriptors = MakeGenerator("Morgan3Counts,RDKit2D".split(","))
+            N=10
             r = raw.MakeStore(descriptors.GetColumns(), N, directory)
 
             smiles = ["C"]
             data = []
-            for i in range(255):
+            for i in range(N):
                 row = descriptors.process( "".join(smiles) )
                 data.append(row)
                 r.putRow( i, row )

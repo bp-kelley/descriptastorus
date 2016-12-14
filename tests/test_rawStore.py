@@ -13,12 +13,12 @@ class TestCast(unittest.TestCase):
         if os.path.exists(self.directory):
             shutil.rmtree(self.directory)
 
-    def testStore(self):
+    def atestStore(self):
         counts = [("m3%d"%d, numpy.uint8) for d in range(2048)]
         rddescriptors = [("rd%d"%d, numpy.float64) for d in range(20)]
         cols = counts + rddescriptors
 
-        N=40000
+        N=4000
         t1 = time.time()
         s = raw.MakeStore(cols, N, self.directory)
         print (time.time()-t1, "seconds to make the raw storage")
