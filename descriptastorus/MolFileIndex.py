@@ -74,20 +74,23 @@ class MolFileIndex:
             colnames = self.colnames = ["column_%d"%x for x in range(len(self._get(0)))]
 
         # get the first entry
-        if self.hasHeader:
-            row = self._get(1)
-        else:
-            row = self._get(0)
+        row = self._get(0) # takes header into account internally
             
             
         if self.smilesColumn != -1:
             try:
                 self.smilesColIdx = int(self.smilesColumn)
             except ValueError:
-                self.smilesColIdx = colnames.index(self.smilesColumn)
-                if self.smilesColIdx == -1:
-                    raise IndexError("Specified smiles column %r name not in header"%
-                                     self.smilesColumn)
+                try:
+                    self.smilesColIdx = colnames.index(self.smilesColumn)
+                except ValueError:
+                    raise IndexError("Specified smiles column %r name not in header\n"
+                                     "\tHeader is %r\n"
+                                     "\tPerhaps the seperator is misspecified (currently %r)"%(
+                                         self.smilesColumn,
+                                         self.colnames,
+                                         self.sep)
+                                     )
             
             if len(row) <= self.smilesColIdx:
                 raise IndexError("Smiles Column %d greater than rowsize %s\n"
@@ -100,11 +103,16 @@ class MolFileIndex:
             try:
                 self.nameidx = int(self.nameColumn)
             except ValueError:
-                self.nameidx = colnames.index(self.nameColumn)
+                try:
+                    self.nameidx = colnames.index(self.nameColumn)
+                except ValueError:
+                    raise IndexError("Specified name column %r name not in header\n"
+                                     "\tHeader is %r\n"
+                                     "\tPerhaps the seperator is misspecified (currently %r)"%(
+                                         self.smilesColumn,
+                                         self.colnames,
+                                         self.sep)
 
-                if self.nameidx == -1:
-                    raise IndexError("Specified name column name %r not in header"%
-                                     self.nameColumn)
 
             if len(row) <= self.nameidx:
                 raise IndexError("Name Column %d greater than rowsize %s\n"
