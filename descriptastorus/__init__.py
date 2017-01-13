@@ -1,2 +1,2 @@
-from DescriptaStore import DescriptaStore
+from .DescriptaStore import DescriptaStore
 
