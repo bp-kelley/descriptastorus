@@ -21,6 +21,18 @@ There are three basic ways to use DescriptaStorus:
   2. Make a DescriptaStore using a script
   3. Using a DescriptaStore to access properties
 
+Installing
+==========
+
+```
+git clone https://bitbucket.org/novartisnibr/rdkit-descriptastorus.git
+cd rdkit-descriptastorus
+python setup.py install
+```
+
+Note:  scripts are not currently installed, they should be used from
+this directory.
+
 Make a MolFileIndex
 ===================
 
@@ -98,6 +110,29 @@ optional arguments:
                         for the name column
 
 ```
+
+Example:
+
+Suppose you have a smiles file like the following:
+
+```
+SMILES STRU_ID
+c1ccccc1 NVP-1234
+```
+
+This is a whitespace seperated file with a header.  To make the standard
+storage and also index the inchikey:
+
+```
+python scripts/storus.py --smilesColumn=SMILES --nameColumn=STRU_ID --hasHeader --index-inchikey \
+  --seperator=" " \
+  smiles.txt mysmiles-store
+```
+
+Note that smiles files are very seperator dependent.  If the smiles or name column
+can't be found, it is might be because the seperator is misspecified.
+
+The default properties created are 'Morgan3Counts,RDKit2D'.
 
 Using a DescriptaStore
 ======================
