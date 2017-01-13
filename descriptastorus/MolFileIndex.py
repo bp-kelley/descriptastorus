@@ -112,6 +112,7 @@ class MolFileIndex:
                                          self.smilesColumn,
                                          self.colnames,
                                          self.sep)
+                                     )
 
 
             if len(row) <= self.nameidx:
