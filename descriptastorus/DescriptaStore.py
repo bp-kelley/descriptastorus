@@ -1,7 +1,8 @@
 from __future__ import print_function
-import raw
-import MolFileIndex
-import os, sys
+from . import raw
+from . import MolFileIndex
+import os, sys, contextlib
+
 try:
     import kyotocabinet
 except ImportError:
@@ -70,6 +71,15 @@ class DescriptaStore:
         else:
             print("Couldn't open name db", name, file=sys.stderr)
             self.name = None
+
+    def close(self):
+        self.db.close()
+        self.index.close()
+        if self.inchikey is not None:
+            self.inchikey.close()
+        
+        if self.name is not None:
+            self.name.close()
             
     def __len__(self):
         return self.db.N

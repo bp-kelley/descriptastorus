@@ -1,6 +1,6 @@
 from __future__ import print_function
-import DescriptaStore, MolFileIndex
-from descriptors import MakeGenerator
+from . import DescriptaStore, MolFileIndex
+from .descriptors import MakeGenerator
 from rdkit.Chem import AllChem
 
 import multiprocessing
@@ -99,80 +99,83 @@ def make_store(options):
     numstructs = sm.N
     s = raw.MakeStore(properties.GetColumns(), sm.N, options.storage,
                       checkDirectoryExists=False)
-    if options.index_inchikey:
-        cabinet = kyotocabinet.DB()
-        inchi = os.path.join(options.storage, "inchikey.kch")
-        cabinet.open(inchi, kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)
-
-    if options.nameColumn != -1:
-        name_cabinet = kyotocabinet.DB()
-        name = os.path.join(options.storage, "name.kch")
-        name_cabinet.open(name, kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)
-        
-        
-    num_cpus = multiprocessing.cpu_count()
-    pool = multiprocessing.Pool(num_cpus)
-    print ("Number of molecules to process", numstructs)
-    
-    done = False
-    count = 0
-    batchsize = 10000
-    badColumnWarning = False
-    inchies = {}
-    while 1:
-        lastcount = count
-        joblist = []
-        for cpuidx in range(num_cpus):
-            jobs = []
-            for i in range(count, min(count+batchsize, sm.N)):
-                jobs.append((i,sm.getMol(i)))
-            count = i+1
-            if jobs:
-                joblist.append(jobs)
-        if not joblist:
-            break
-
+    try:
         if options.index_inchikey:
-            results = pool.map(processInchi, joblist)
-        else:
-            results = pool.map(process, joblist)
-            
-        for result in results:
-            if not badColumnWarning and len(result) == 0:
-                badColumnWarning = True
-                print("WARNING: no molecules processed in batch, check the smilesColumn",
-                      file=sys.stderr)
-                print("WARNING: First 10 smiles:\n",
-                      file=sys.stderr)
-                print("\n".join(["%i: %s"%(i,sm.get(i)) for i in range(0, min(sm.N,10))]),
-                      file=sys.stderr)
+            cabinet = kyotocabinet.DB()
+            inchi = os.path.join(options.storage, "inchikey.kch")
+            cabinet.open(inchi, kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)
+
+        if options.nameColumn != -1:
+            name_cabinet = kyotocabinet.DB()
+            name = os.path.join(options.storage, "name.kch")
+            name_cabinet.open(name, kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)
+
+
+        num_cpus = multiprocessing.cpu_count()
+        pool = multiprocessing.Pool(num_cpus)
+        print ("Number of molecules to process", numstructs)
+
+        done = False
+        count = 0
+        batchsize = 10000
+        badColumnWarning = False
+        inchies = {}
+        while 1:
+            lastcount = count
+            joblist = []
+            for cpuidx in range(num_cpus):
+                jobs = []
+                for i in range(count, min(count+batchsize, sm.N)):
+                    jobs.append((i,sm.getMol(i)))
+                count = i+1
+                if jobs:
+                    joblist.append(jobs)
+            if not joblist:
+                break
 
             if options.index_inchikey:
-                for i,v,inchi,key in result:
-                    s.putRow(i, v)
-                    if inchi in inchies:
-                        inchies[key].append(i)
-                    else:
-                        inchies[key] = [i]
-
-                    if options.nameColumn != -1:
-                        name = sm.getName(i)
-                        name_cabinet[name] = i
-                
+                results = pool.map(processInchi, joblist)
             else:
-                for i,v in result:
-                    s.putRow(i, v)
-                    name = sm.getName(i)
-                    if name in name_cabinet:
-                        print("WARNING: name %s duplicated at molecule %d and %d"%(
-                            name, name_cabinet[name], i))
-                    else:
-                        name_cabinet[name] = i
-                
-        print("Done with %s out of %s"%(count, sm.N), file=sys.stderr)
+                results = pool.map(process, joblist)
 
-    if options.index_inchikey:
-        print("Indexing inchies", file=sys.stderr)
-        for k in sorted(inchies):
-            cabinet[k] = repr(inchies[k])
-    
+            for result in results:
+                if not badColumnWarning and len(result) == 0:
+                    badColumnWarning = True
+                    print("WARNING: no molecules processed in batch, check the smilesColumn",
+                          file=sys.stderr)
+                    print("WARNING: First 10 smiles:\n",
+                          file=sys.stderr)
+                    print("\n".join(["%i: %s"%(i,sm.get(i)) for i in range(0, min(sm.N,10))]),
+                          file=sys.stderr)
+
+                if options.index_inchikey:
+                    for i,v,inchi,key in result:
+                        s.putRow(i, v)
+                        if inchi in inchies:
+                            inchies[key].append(i)
+                        else:
+                            inchies[key] = [i]
+
+                        if options.nameColumn != -1:
+                            name = sm.getName(i)
+                            name_cabinet[name] = i
+
+                else:
+                    for i,v in result:
+                        s.putRow(i, v)
+                        name = sm.getName(i)
+                        if name in name_cabinet:
+                            print("WARNING: name %s duplicated at molecule %d and %d"%(
+                                name, name_cabinet[name], i))
+                        else:
+                            name_cabinet[name] = i
+
+            print("Done with %s out of %s"%(count, sm.N), file=sys.stderr)
+
+        if options.index_inchikey:
+            print("Indexing inchies", file=sys.stderr)
+            for k in sorted(inchies):
+                cabinet[k] = repr(inchies[k])
+    finally:
+        sm.close()
+        s.close()

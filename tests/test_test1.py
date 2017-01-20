@@ -9,6 +9,8 @@ TEST_DIR = "test1"
 
 class TestCase(unittest.TestCase):
     def setUp(self):
+        if os.path.exists(TEST_DIR):
+            shutil.rmtree(TEST_DIR)
         index = self.index = MolFileIndex.MakeSmilesIndex(
             os.path.join(datahook.datadir, "../data/test1.smi"), TEST_DIR, hasHeader=True,
             smilesColumn="smiles", nameColumn="name")

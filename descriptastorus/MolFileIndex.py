@@ -18,25 +18,9 @@ class MolFileIndex:
     """Index for a molecule file to provide random access to the internal molecules.
     """
     
-    def __init__(self,
-                 indexDirectory):
-#                 filename=None,
-#                 smilesColumn=-1, nameColumn=-1,
-#                 hasHeader=False, sep=None,
-#                 nameFxnName=None,
-#                 indexSmiles=True,
-#                 indexInchi=True
-#             ):
+    def __init__(self, indexDirectory):
         """Fast random access to a smiles file by row index
-        filename           = indexed file
-        rawStoreDirectory  = RawStore of the indices
-
-        OptionalData
-        ------------
-        smilesColumn = column used to extract the smileString = -1 if not smiles format
-        hasHeader    = First entry is the header entry [False]
-        sep          = seperator used to extract columns [None]
-        nameFxn      = optional function to return the name of the indexed molecule
+        indexDirectory = directory of the molfile index
 
         Example
         -----------
@@ -45,7 +29,8 @@ class MolFileIndex:
         optfile = nameOptFile(indexDirectory)
 
         if os.path.exists(optfile):
-            options = pickle.load(open(optfile))
+            with open(optfile, 'rb') as f:
+                options = pickle.load(f)
         else:
             raise IOError("Not a molfile index")
 
@@ -123,6 +108,10 @@ class MolFileIndex:
                                      self.smilesColIdx,
                                      len(row),
                                      self.sep))
+    def close(self):
+        self.db.close()
+        self.f.close()
+        
     def _get(self, idx):
         if idx is None:
             idx = 0
@@ -175,8 +164,9 @@ class MolFileIndex:
 
 def simplecount(filename):
     lines = 0
-    for line in open(filename):
-        lines += 1
+    with open(filename) as f:
+        for line in f:
+            lines += 1
     return lines
 
 def index(fname, word):
@@ -231,7 +221,8 @@ def MakeSmilesIndex(filename, dbdir, hasHeader, smilesColumn, nameColumn=-1, sep
     # save the options
     optfile = nameOptFile(dbdir)
 
-    pickle.dump(options, open(optfile,'w'))
+    with open(optfile, 'wb') as f:
+        pickle.dump(options, f)
     
     # first row
     #  TODO sniff newline...
@@ -239,7 +230,7 @@ def MakeSmilesIndex(filename, dbdir, hasHeader, smilesColumn, nameColumn=-1, sep
     db.putRow(0, [0])
     for i,pos in enumerate(index(cpfile, b"\n")):
         db.putRow(i+1, [pos+1])
-
+    db.close()
     return MolFileIndex(dbdir)
 #, os.path.basename(filename), smilesColumn,
 #                        nameColumn=nameColumn, hasHeader=hasHeader,
