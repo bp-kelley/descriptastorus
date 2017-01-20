@@ -2,7 +2,7 @@
 This is a canned example for generating descriptors
 Please modify as necessary
 """
-
+from __future__ import print_function
 from rdkit import Chem
 from rdkit.Chem import Descriptors
 from rdkit.Chem import rdMolDescriptors as rd
@@ -83,17 +83,15 @@ class RDKit2D(DescriptorGenerator):
         DescriptorGenerator.__init__(self)
         # specify names and numpy types for all columns
         if not properties:
-            self.columns = [ (name, numpy.float64) for name,func in Descriptors.descList ]
+            self.columns = [ (name, numpy.float64) for name,func in sorted(Descriptors.descList) ]
         else:
             columns = self.columns = []
             for p in properties:
-                if p in FUNCS:
+                if p in sorted(FUNCS):
                     columns.append((name, numpy.float64))
                 else:
                     raise KeyError("Unable to find specified property %s"%p)
         
-
-
     def GetColumns(self):
         """Returns [(name, numpy.dtype), ...] for all columns being computed"""
         return self.columns
