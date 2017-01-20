@@ -1,4 +1,6 @@
 from __future__ import print_function
+from rdkit.Chem import AllChem
+
 import os, numpy, sys
 from . import raw
 import shutil, pickle
@@ -153,6 +155,15 @@ class MolFileIndex:
             return self._get(idx)[self.smilesColIdx]
         return self._get(idx)
 
+    def getRDMol(self, idx):
+        data = self._get(idx)
+        if self.smilesColIdx != -1:
+            m = AllChem.MolFromSmiles(data[0])
+            if len(data) > 0:
+                m.SetProp("_Name", data[1])
+            return m
+        return AllChem.MolFromMolBlock(data)
+    
     def getName(self, idx):
         if self.nameidx == -1:
             if self._nameGetter:
