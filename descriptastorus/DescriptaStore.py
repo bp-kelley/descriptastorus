@@ -68,6 +68,7 @@ class DescriptaStore:
                 self.name = kyotocabinet.DB()
                 self.name.open(name, kyotocabinet.DB.OREADER)
         else:
+            print("Couldn't open name db", name, file=sys.stderr)
             self.name = None
             
     def __len__(self):
@@ -86,7 +87,7 @@ class DescriptaStore:
 
     def lookupName(self, name):
         """name -> returns the index of the given name"""
-        if not self.name:
+        if self.name is None:
             raise ValueError("Name index not available")
 
         try:
@@ -98,7 +99,7 @@ class DescriptaStore:
     
     def lookupInchiKey(self, key):
         """key -> returns the indicies of the inchi key"""
-        if not self.inchikey:
+        if self.inchikey is None:
             raise ValueError("Inchi index not available")
         res =  eval(self.inchikey[key])
         return res
