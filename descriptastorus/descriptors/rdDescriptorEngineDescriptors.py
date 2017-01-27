@@ -4,8 +4,9 @@ Please modify as necessary
 """
 from __future__ import print_function
 from rdkit import Chem
-from rdkit.Chem import Descriptors
+from rdkit.Chem import Descriptors, MolFromSmiles
 from rdkit.Chem import rdMolDescriptors as rd
+from rdkit.Avalon import pyAvalonTools
 import numpy,sys
 from .DescriptorGenerator import DescriptorGenerator
 import logging
@@ -26,6 +27,9 @@ class DescriptorEngineDescriptors(DescriptorGenerator):
         """Returns [(name, numpy.dtype), ...] for all columns being computed"""
         return self.columns
 
+    def molFromSmiles(self, True):
+        return MolFromSmiles(pyAvalonTools.GetCanonSmiles(smiles, True))
+        
     @staticmethod
     def get(values, key, smiles):
         r = values.get(key, None)
@@ -64,6 +68,16 @@ class DescriptorEngineDescriptors(DescriptorGenerator):
             return None
 
         return self.processMol(m, smiles)
-
-
+    
 DescriptorEngineDescriptors()
+    
+MOKA_DESCRIPTORS = "moka:fractionIonized(pH=10.0),moka:fractionIonized(pH=4.0),moka:logD(pH=12.0),moka:logD(pH=7.4)"
+
+class DescriptorEngineMokeDescriptors(DescriptorEngineDescriptors):
+    NAME="DescriptorEngineMokaDescriptors"
+    def __init__(self):
+        DescriptorEngineDescriptors.__init__(self, MOKA_DESCRIPTORS)
+
+
+
+DescriptorEngineMokaDescriptors()

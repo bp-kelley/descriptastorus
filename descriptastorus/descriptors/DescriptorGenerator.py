@@ -9,7 +9,10 @@ class DescriptorGenerator:
         except:
             logging.exception("DescriptorGenerator must have a NAME (self.NAME)")
             raise
-        
+
+    def molFromSmiles(self, smiles):
+        return Chem.MolFromSmiles(smiles)
+    
     def GetColumns(self):
         """Returns [(name, numpy.dtype), ...] for all columns being computed"""
         raise NotImplementedError
@@ -33,7 +36,7 @@ class DescriptorGenerator:
         use rdkit 2D properties.
         """
         try:
-            mol = Chem.MolFromSmiles(smiles)
+            mol = self.molFromSmiles(smiles)
         except:
             return None
 
@@ -50,7 +53,7 @@ class DescriptorGenerator:
         indices = []
         goodsmiles = []
         for i,smile in enumerate(smiles):
-            m = Chem.MolFromSmiles(smile)
+            m = self.molFromSmiles(smile)
             if m:
                 mols.append(m)
                 indices.append(i)
