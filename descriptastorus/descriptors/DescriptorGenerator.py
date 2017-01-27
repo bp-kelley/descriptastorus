@@ -33,15 +33,39 @@ class DescriptorGenerator:
         use rdkit 2D properties.
         """
         try:
-            m = Chem.MolFromSmiles(smiles)
+            mol = Chem.MolFromSmiles(smiles)
         except:
             return None
 
-        if m == None:
+        if mol == None:
             return None
 
-        return self.processMol(m, smiles)
-    
+        return self.processMol(mol, smiles)
+
+    def processMols(self, mols, smiles):
+        return [self.processMol(m, smile) for m, smile in zip(mols, smiles)]
+
+    def processSmiles(self, smiles):
+        mols = []
+        indices = []
+        goodsmiles = []
+        for i,smile in enumerate(smiles):
+            m = Chem.MolFromSmiles(smile)
+            if m:
+                mols.append(m)
+                indices.append(i)
+                goodsmiles.append(smile)
+                
+        results = processMols(mols, goodsmiles)
+        if len(indices) == len(smiles):
+            return result
+
+        else:
+            all_results = [None] * len(smiles)
+            for idx,result in zip(indicies, results):
+                all_results[idx] = result
+            return all_results
+        
 class Container(DescriptorGenerator):
     def __init__(self, generators):
         self.generators = generators
@@ -58,6 +82,12 @@ class Container(DescriptorGenerator):
             results.extend(g.processMol(m,smiles))
         return results
 
+    def processMols(self, mols, smiles):
+        results = []
+        for g in self.generators:
+            results.extend(g.processMols(mols,smiles))
+        return results
+    
 
 def MakeGenerator( generator_names ):
     generators = []

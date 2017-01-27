@@ -31,13 +31,21 @@ class DescriptorEngineDescriptors(DescriptorGenerator):
         r = values.get(key, None)
         if r == None:
             print("Failed to compute %s for smiles %s"%(key, smiles), file=sys.stderr)
-        return 0.0
+        return float('nan')
     
     def processMol(self, m, smiles):
         res = self.engine.calculate([m])
         values = res[0]
         result = [ self.get(values, name, smiles) for name in self.descriptors ]
         return result
+
+    def processMols(self, mols, smiles):
+        res = self.engine.calculate([mols])
+        results = []
+        for values in res:
+            values = res[0]
+            result.append([ self.get(values, name, smiles) for name in self.descriptors ])
+        return results
         
     def process(self, smiles):
         """smiles
