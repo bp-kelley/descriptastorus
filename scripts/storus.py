@@ -23,22 +23,26 @@ def process( job ):
     return res
 
 def processInchi( job ):
-    res = []
-    for index,smiles in job:
-        try:
-            m = AllChem.MolFromSmiles(smiles)
-        except:
-            continue
-        if not m:
-            continue
+    try:
+        res = []
+        for index,smiles in job:
+            try:
+                m = AllChem.MolFromSmiles(smiles)
+            except:
+                continue
+            if not m:
+                continue
         
-        counts = props[0].processMol(m, smiles)
-        inchi = AllChem.MolToInchi(m)
-        key = AllChem.InchiToInchiKey(inchi)
+            counts = props[0].processMol(m, smiles)
+            inchi = AllChem.MolToInchi(m)
+            key = AllChem.InchiToInchiKey(inchi)
 
-        if not counts:
-            continue
-        res.append((index,counts,inchi,key))
+            if not counts:
+                continue
+            res.append((index,counts,inchi,key))
+    except Exception, x:
+        import traceback
+        traceback.print_exc()
 
     return res
 
@@ -46,7 +50,7 @@ def processInchi( job ):
 
 if __name__ == "__main__":
 
-    import argparse, os, shutil
+    import argparse, os, shutil, time
     from descriptastorus import MolFileIndex, raw
     try:
         import kyotocabinet
@@ -102,7 +106,7 @@ if __name__ == "__main__":
                                       hasHeader = args.hasHeader,
                                       smilesColumn = args.smilesColumn,
                                       nameColumn = args.nameColumn)
-    print("Creating descriptors for %s molecules..."%sm.N)
+    print("Creating empty descriptor storage for %s molecules..."%sm.N)
 
                                       
     import multiprocessing
@@ -128,7 +132,7 @@ if __name__ == "__main__":
     
     done = False
     count = 0
-    batchsize = 10000
+    batchsize = 100
     badColumnWarning = False
     inchies = {}
     while 1:
@@ -143,7 +147,7 @@ if __name__ == "__main__":
                 joblist.append(jobs)
         if not joblist:
             break
-        
+        t1=time.time()
         if args.index_inchikey:
             results = pool.map(processInchi, joblist)
         else:
@@ -181,8 +185,8 @@ if __name__ == "__main__":
                             name, name_cabinet[name], i))
                     else:
                         name_cabinet[name] = i
-                
-        print("Done with %s out of %s"%(count, sm.N), file=sys.stderr)
+        t2=time.time()        
+        print("Done with %s out of %s - %s seconds"%(count, sm.N, t2-t1), file=sys.stderr)
 
     if args.index_inchikey:
         print("Indexing inchies", file=sys.stderr)
