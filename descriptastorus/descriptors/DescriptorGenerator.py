@@ -6,7 +6,6 @@ class DescriptorGenerator:
     def __init__(self):
         try:
             self.REGISTRY[self.NAME.lower()] = self
-            logging.warning("REGISTRY: %r", self.REGISTRY)
         except:
             logging.exception("DescriptorGenerator must have a NAME (self.NAME)")
             raise
