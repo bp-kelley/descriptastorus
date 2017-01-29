@@ -33,9 +33,10 @@ class DescriptorEngineDescriptors(DescriptorGenerator):
     @staticmethod
     def get(values, key, smiles):
         r = values.get(key, None)
-        if r == None:
-            print("Failed to compute %s for smiles %s"%(key, smiles), file=sys.stderr)
-        return float('nan')
+        if r is None or r == 'None':
+            #print("Failed to compute %s for smiles %s"%(key, smiles), file=sys.stderr)
+            return float('nan')
+        return r
     
     def processMol(self, m, smiles):
         res = self.engine.calculate([m])
@@ -44,11 +45,14 @@ class DescriptorEngineDescriptors(DescriptorGenerator):
         return result
 
     def processMols(self, mols, smiles):
-        res = self.engine.calculate([mols])
         results = []
-        for values in res:
-            values = res[0]
-            result.append([ self.get(values, name, smiles) for name in self.descriptors ])
+        res = self.engine.calculate(mols)
+        for i in range(len(mols)):
+            values = res[i]
+            v = [ self.get(values, name, smiles[i]) for name in self.descriptors ]
+            assert None not in v
+            assert 'None' not in v
+            results.append(v)
         return results
         
     def process(self, smiles):
@@ -73,7 +77,7 @@ DescriptorEngineDescriptors()
     
 MOKA_DESCRIPTORS = "moka:fractionIonized(pH=10.0),moka:fractionIonized(pH=4.0),moka:logD(pH=12.0),moka:logD(pH=7.4)"
 
-class DescriptorEngineMokeDescriptors(DescriptorEngineDescriptors):
+class DescriptorEngineMokaDescriptors(DescriptorEngineDescriptors):
     NAME="DescriptorEngineMokaDescriptors"
     def __init__(self):
         DescriptorEngineDescriptors.__init__(self, MOKA_DESCRIPTORS)
