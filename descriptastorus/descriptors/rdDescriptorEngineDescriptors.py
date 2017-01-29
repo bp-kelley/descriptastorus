@@ -72,8 +72,11 @@ class DescriptorEngineDescriptors(DescriptorGenerator):
             return None
 
         return self.processMol(m, smiles)
-    
-DescriptorEngineDescriptors()
+
+try:    
+    DescriptorEngineDescriptors()
+except Exception, e:
+    logging.warning("Unable to load descriptor engine descriptors: %s", str(e))
     
 MOKA_DESCRIPTORS = "moka:fractionIonized(pH=10.0),moka:fractionIonized(pH=4.0),moka:logD(pH=12.0),moka:logD(pH=7.4)"
 
@@ -83,5 +86,7 @@ class DescriptorEngineMokaDescriptors(DescriptorEngineDescriptors):
         DescriptorEngineDescriptors.__init__(self, MOKA_DESCRIPTORS)
 
 
-
-DescriptorEngineMokaDescriptors()
+try:
+    DescriptorEngineMokaDescriptors()
+except Exception, e:
+    logging.warning("Unable to load descriptor engine descriptors: %s", str(e))
