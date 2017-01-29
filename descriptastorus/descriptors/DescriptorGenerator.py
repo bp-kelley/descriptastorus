@@ -6,6 +6,7 @@ class DescriptorGenerator:
     def __init__(self):
         try:
             self.REGISTRY[self.NAME.lower()] = self
+            logging.warning("REGISTRY: %r", self.REGISTRY)
         except:
             logging.exception("DescriptorGenerator must have a NAME (self.NAME)")
             raise
@@ -93,6 +94,9 @@ class Container(DescriptorGenerator):
     
 
 def MakeGenerator( generator_names ):
+    if not len(generator_names):
+        logging.warning("MakeGenerator called with no generator names")
+        raise ValueError("MakeGenerator called with no generator names")
     generators = []
     for name in generator_names:
         try:
@@ -101,4 +105,8 @@ def MakeGenerator( generator_names ):
         except:
             logging.exception("No DescriptorGenerator found named %s", name)
             raise
-    return Container(generators)
+    if len(generators) > 1:
+        return Container(generators)
+    if len(generators):
+        return generators[0]
+

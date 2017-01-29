@@ -67,10 +67,13 @@ def processInchi( job ):
         res.append((index,counts,inchi,key))
 
     return res
-        
-def make_store(options):
-    props.append( MakeGenerator(options.descriptors.split(",")) )
 
+# not thread safe!
+def make_store(options):
+    while props:
+        props.pop()
+        
+    props.append( MakeGenerator(options.descriptors.split(",")) )
     properties = props[0]
     # to test molecule
     
