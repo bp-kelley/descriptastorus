@@ -23,23 +23,32 @@ def process( job ):
     return res
 
 def processInchi( job ):
+    res = []
     try:
-        res = []
-        for index,smiles in job:
+        mols = []
+        allSmiles = []
+        indices = []
+        for index, smiles in job:
             try:
                 m = AllChem.MolFromSmiles(smiles)
+                if not m: continue
+                
+                mols.append(m)
+                allSmiles.append(smiles)
+                indices.append(index)
             except:
                 continue
-            if not m:
+
+        results = props[0].processMols(mols, allSmiles)
+        assert(len(results) == len(mols))
+        for index, result, m in zip(indices, results, mols):
+            if not result:
                 continue
-        
-            counts = props[0].processMol(m, smiles)
             inchi = AllChem.MolToInchi(m)
             key = AllChem.InchiToInchiKey(inchi)
-
-            if not counts:
-                continue
-            res.append((index,counts,inchi,key))
+#            assert ('None' not in result)
+            res.append((index, result, inchi, key))
+            
     except Exception, x:
         import traceback
         traceback.print_exc()
@@ -132,7 +141,7 @@ if __name__ == "__main__":
     
     done = False
     count = 0
-    batchsize = 100
+    batchsize = 500
     badColumnWarning = False
     inchies = {}
     while 1:
@@ -148,12 +157,14 @@ if __name__ == "__main__":
         if not joblist:
             break
         t1=time.time()
+
         if args.index_inchikey:
             results = pool.map(processInchi, joblist)
         else:
             results = pool.map(process, joblist)
             
-
+        print("#jobs:", len(joblist), "#results:", len(results),
+              file=sys.stderr)
         for result in results:
             if not badColumnWarning and len(result) == 0:
                 badColumnWarning = True
@@ -166,7 +177,12 @@ if __name__ == "__main__":
 
             if args.index_inchikey:
                 for i,v,inchi,key in result:
-                    s.putRow(i, v)
+                    try:
+                        s.putRow(i, v)
+                    except:
+                        print("Index %s row %s"%(i,v), file=sys.stderr)
+                        raise
+                    
                     if inchi in inchies:
                         inchies[key].append(i)
                     else:
