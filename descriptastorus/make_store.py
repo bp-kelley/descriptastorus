@@ -28,7 +28,7 @@ except:
 class MakeStorageOptions:
     def __init__(self, storage, smilesfile, 
                  hasHeader, smilesColumn, nameColumn, seperator,
-                 descriptors, index_inchikey):
+                 descriptors, index_inchikey, batchsize=1000):
         self.storage = storage
         self.smilesfile = smilesfile
         self.smilesColumn = smilesColumn
@@ -37,6 +37,7 @@ class MakeStorageOptions:
         self.descriptors = descriptors
         self.hasHeader = hasHeader
         self.index_inchikey = index_inchikey
+        self.batchsize = batchsize
 
 # ugly multiprocessing nonesense
 #  this makes this really not threadsafe
@@ -71,8 +72,8 @@ def processInchi( job ):
                 job[0][0], job[-1][0]))
             return []
         
-        for (index, smiles), result in zip(job, results):
-            m = mols[index]
+        for i, ((index, smiles), result) in enumerate(zip(job, results)):
+            m = mols[i]
             if result:
                 inchi = AllChem.MolToInchi(m)
                 key = AllChem.InchiToInchiKey(inchi)
@@ -137,7 +138,7 @@ def make_store(options):
 
         done = False
         count = 0
-        batchsize = 10000
+        batchsize = options.batchsize
         badColumnWarning = False
         inchies = {}
         while 1:

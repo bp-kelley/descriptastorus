@@ -33,6 +33,7 @@ class TestCase(unittest.TestCase):
                 
             opts = make_store.MakeStorageOptions( storage=storefname, smilesfile=fname,
                                                   hasHeader=False,
+                                                  batchsize=1,
                                                   smilesColumn=0, nameColumn=1,
                                                   seperator=" ", descriptors="RDKit2DSubset",
                                                   index_inchikey=True )
@@ -101,6 +102,7 @@ class TestCase(unittest.TestCase):
                 
             opts = make_store.MakeStorageOptions( storage=storefname, smilesfile=fname,
                                                   hasHeader=False,
+                                                  batchsize=1,
                                                   smilesColumn=0, nameColumn=1,
                                                   seperator=" ", descriptors="RDKit2DSubset",
                                                   index_inchikey=False )
