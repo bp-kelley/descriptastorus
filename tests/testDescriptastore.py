@@ -2,11 +2,24 @@ from __future__ import print_function
 import unittest
 from rdkit.Chem import AllChem
 from descriptastorus import make_store, DescriptaStore
+from descriptastorus.descriptors.rdDescriptors import RDKit2D
+
 import contextlib, tempfile, os, shutil, sys
 import datahook
 
 one_smiles = "c1ccccc1 0"
 many_smiles = "\n".join( [ "C"*i + "c1ccccc1 " + str(i) for i in range(10) ] )
+
+from rdkit.Chem import Descriptors
+
+class RDKit2DSubset(RDKit2D):
+    NAME="RDKit2DSubset"
+    def __init__(self):
+        RDKit2D.__init__(self, properties=[
+            'ExactMolWt',
+            'NumAliphaticRings', 'NumAromaticCarbocycles',
+            'NumAromaticHeterocycles', 'NumAromaticRings'])
+RDKit2DSubset()
 
 class TestCase(unittest.TestCase):
     def testOffByOne(self):
@@ -21,7 +34,7 @@ class TestCase(unittest.TestCase):
             opts = make_store.MakeStorageOptions( storage=storefname, smilesfile=fname,
                                                   hasHeader=False,
                                                   smilesColumn=0, nameColumn=1,
-                                                  seperator=" ", descriptors="RDKit2D",
+                                                  seperator=" ", descriptors="RDKit2DSubset",
                                                   index_inchikey=True )
             make_store.make_store(opts)
 
@@ -29,7 +42,8 @@ class TestCase(unittest.TestCase):
                 self.assertEqual( store.lookupName("0"), 0)
 
                 self.assertEqual( store.lookupInchiKey("UHOVQNZJYSORNB-UHFFFAOYSA-N"), [0])
-                self.assertEqual( store.descriptors().get(0), (3.000000000000001, 71.96100505779535, 4.242640687119286, 3.464101615137755, 3.464101615137755, 3.0, 2.0000000000000004, 2.0000000000000004, 1.1547005383792521, 1.1547005383792521, 0.6666666666666671, 0.6666666666666671, 0.38490017945975075, 0.38490017945975075, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 78.046950192, 0.0, -0.78, 6.0, 72.06599999999999, 34.3994618804395, 3.4115708812260532, 1.6057694396735218, 0.5823992601400448, 37.43140311949697, 2.0, 0.062268570782092456, 2.0, -0.062268570782092456, 2.0, 0.062268570782092456, 2.0, -0.062268570782092456, 1.6866, 26.441999999999993, 78.11399999999999, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 30.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 12.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
+                self.assertEqual(store.descriptors().get(0), (78.046950192, 0.0, 1.0, 0.0, 1.0))
+
         finally:
             if os.path.exists(fname):
                 os.unlink(fname)
@@ -46,7 +60,7 @@ class TestCase(unittest.TestCase):
             opts = make_store.MakeStorageOptions( storage=storefname, smilesfile=fname,
                                                   hasHeader=False,
                                                   smilesColumn=0, nameColumn=1,
-                                                  seperator=" ", descriptors="RDKit2D",
+                                                  seperator=" ", descriptors="RDKit2DSubset",
                                                   index_inchikey=True )
             make_store.make_store(opts)
 
@@ -55,12 +69,22 @@ class TestCase(unittest.TestCase):
                 for i in range(10):
                     self.assertEqual( store.lookupName(str(i)), i)
 
+                self.assertEqual(store.descriptors().get(0), (78.046950192, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(1), (92.062600256, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(2), (106.07825032, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(3), (120.093900384, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(4), (134.109550448, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(5), (148.125200512, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(6), (162.140850576, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(7), (176.15650064, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(8), (190.172150704, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(9), (204.187800768, 0.0, 1.0, 0.0, 1.0))                    
+
                 for i in range(10):
                     m = store.molIndex().getRDMol(i)
                     inchi = AllChem.InchiToInchiKey(AllChem.MolToInchi(m))
                     self.assertEqual( store.lookupInchiKey(inchi), [i])
 
-                self.assertEqual( store.descriptors().get(0), (3.000000000000001, 71.96100505779535, 4.242640687119286, 3.464101615137755, 3.464101615137755, 3.0, 2.0000000000000004, 2.0000000000000004, 1.1547005383792521, 1.1547005383792521, 0.6666666666666671, 0.6666666666666671, 0.38490017945975075, 0.38490017945975075, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 78.046950192, 0.0, -0.78, 6.0, 72.06599999999999, 34.3994618804395, 3.4115708812260532, 1.6057694396735218, 0.5823992601400448, 37.43140311949697, 2.0, 0.062268570782092456, 2.0, -0.062268570782092456, 2.0, 0.062268570782092456, 2.0, -0.062268570782092456, 1.6866, 26.441999999999993, 78.11399999999999, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 30.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 12.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
 
         finally:
             if os.path.exists(fname):
@@ -78,7 +102,7 @@ class TestCase(unittest.TestCase):
             opts = make_store.MakeStorageOptions( storage=storefname, smilesfile=fname,
                                                   hasHeader=False,
                                                   smilesColumn=0, nameColumn=1,
-                                                  seperator=" ", descriptors="RDKit2D",
+                                                  seperator=" ", descriptors="RDKit2DSubset",
                                                   index_inchikey=False )
             make_store.make_store(opts)
 
@@ -86,10 +110,19 @@ class TestCase(unittest.TestCase):
                 for i in range(10):
                     self.assertEqual( store.lookupName(str(i)), i)
 
+                self.assertEqual(store.descriptors().get(0), (78.046950192, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(1), (92.062600256, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(2), (106.07825032, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(3), (120.093900384, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(4), (134.109550448, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(5), (148.125200512, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(6), (162.140850576, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(7), (176.15650064, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(8), (190.172150704, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(9), (204.187800768, 0.0, 1.0, 0.0, 1.0))       
                 for i in range(10):
                     m = store.molIndex().getRDMol(i)
 
-                self.assertEqual( store.descriptors().get(0), (3.000000000000001, 71.96100505779535, 4.242640687119286, 3.464101615137755, 3.464101615137755, 3.0, 2.0000000000000004, 2.0000000000000004, 1.1547005383792521, 1.1547005383792521, 0.6666666666666671, 0.6666666666666671, 0.38490017945975075, 0.38490017945975075, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 78.046950192, 0.0, -0.78, 6.0, 72.06599999999999, 34.3994618804395, 3.4115708812260532, 1.6057694396735218, 0.5823992601400448, 37.43140311949697, 2.0, 0.062268570782092456, 2.0, -0.062268570782092456, 2.0, 0.062268570782092456, 2.0, -0.062268570782092456, 1.6866, 26.441999999999993, 78.11399999999999, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 30.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 12.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
 
         finally:
             if os.path.exists(fname):
@@ -98,7 +131,7 @@ class TestCase(unittest.TestCase):
                 shutil.rmtree(storefname)
                 
 
-    def testManyDuplicated(self):
+    def testContainer(self):
         try:
             fname = tempfile.mktemp()+".smi"
             storefname = tempfile.mktemp()+".store"
@@ -108,7 +141,7 @@ class TestCase(unittest.TestCase):
             opts = make_store.MakeStorageOptions( storage=storefname, smilesfile=fname,
                                                   hasHeader=False,
                                                   smilesColumn=0, nameColumn=1,
-                                                  seperator=" ", descriptors="RDKit2D,RDKit2D",
+                                                  seperator=" ", descriptors="RDKit2DSubset,RDKit2DSubset",
                                                   index_inchikey=True )
             make_store.make_store(opts)
 
@@ -121,8 +154,16 @@ class TestCase(unittest.TestCase):
                     m = store.molIndex().getRDMol(i)
                     inchi = AllChem.InchiToInchiKey(AllChem.MolToInchi(m))
                     self.assertEqual( store.lookupInchiKey(inchi), [i])
-
-                self.assertEqual( store.descriptors().get(0), tuple([3.000000000000001, 71.96100505779535, 4.242640687119286, 3.464101615137755, 3.464101615137755, 3.0, 2.0000000000000004, 2.0000000000000004, 1.1547005383792521, 1.1547005383792521, 0.6666666666666671, 0.6666666666666671, 0.38490017945975075, 0.38490017945975075, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 78.046950192, 0.0, -0.78, 6.0, 72.06599999999999, 34.3994618804395, 3.4115708812260532, 1.6057694396735218, 0.5823992601400448, 37.43140311949697, 2.0, 0.062268570782092456, 2.0, -0.062268570782092456, 2.0, 0.062268570782092456, 2.0, -0.062268570782092456, 1.6866, 26.441999999999993, 78.11399999999999, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 30.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.39820241076966, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 12.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]*2))
+                self.assertEqual(store.descriptors().get(0), (78.046950192, 0.0, 1.0, 0.0, 1.0)*2)
+                self.assertEqual(store.descriptors().get(1), (92.062600256, 0.0, 1.0, 0.0, 1.0)*2)
+                self.assertEqual(store.descriptors().get(2), (106.07825032, 0.0, 1.0, 0.0, 1.0)*2)
+                self.assertEqual(store.descriptors().get(3), (120.093900384, 0.0, 1.0, 0.0, 1.0)*2)
+                self.assertEqual(store.descriptors().get(4), (134.109550448, 0.0, 1.0, 0.0, 1.0)*2)
+                self.assertEqual(store.descriptors().get(5), (148.125200512, 0.0, 1.0, 0.0, 1.0)*2)
+                self.assertEqual(store.descriptors().get(6), (162.140850576, 0.0, 1.0, 0.0, 1.0)*2)
+                self.assertEqual(store.descriptors().get(7), (176.15650064, 0.0, 1.0, 0.0, 1.0)*2)
+                self.assertEqual(store.descriptors().get(8), (190.172150704, 0.0, 1.0, 0.0, 1.0)*2)
+                self.assertEqual(store.descriptors().get(9), (204.187800768, 0.0, 1.0, 0.0, 1.0)*2)       
 
         finally:
             if os.path.exists(fname):
