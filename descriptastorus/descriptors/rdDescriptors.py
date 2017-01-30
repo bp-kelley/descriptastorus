@@ -68,11 +68,11 @@ class RDKit2D(DescriptorGenerator):
             self.columns = [ (name, numpy.float64) for name,func in sorted(Descriptors.descList) ]
         else:
             columns = self.columns = []
-            for p in properties:
-                if p in sorted(FUNCS):
+            for name in properties:
+                if name in sorted(FUNCS):
                     columns.append((name, numpy.float64))
                 else:
-                    raise KeyError("Unable to find specified property %s"%p)
+                    raise KeyError("Unable to find specified property %s"%name)
         
     def GetColumns(self):
         """Returns [(name, numpy.dtype), ...] for all columns being computed"""
