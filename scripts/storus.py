@@ -36,7 +36,7 @@ parser.add_argument("--seperator", default="\t",
                     help="Row index (or header name if the file has a header) for the name column")
 
 parser.add_argument("--batchsize", default=10000,
-                    "Batchsize for chunking up the data for processing")
+                    help="Batchsize for chunking up the data for processing")
 
 opts = parser.parse_args()
 make_store.make_store(opts)
