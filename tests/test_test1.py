@@ -22,11 +22,11 @@ class TestCase(unittest.TestCase):
             
     def testIndexing(self):
         logging.info("Running index test")
-        self.assertEqual(self.index.N, 13)
+        self.assertEqual(self.index.N, 14)
         self.assertEqual(self.index.getMol(12), 'c1ccccc1CCCCCCCCCCCC')
         self.assertEqual(self.index.getName(12), '13')
 
-
+        self.assertEqual(self.index.getRDMol(13), None)
 
 
 if __name__ == '__main__':

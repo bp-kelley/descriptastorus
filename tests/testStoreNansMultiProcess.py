@@ -18,7 +18,7 @@ class NanDescriptors(DescriptorGenerator):
                 ('c', numpy.float32),
                 ('d', numpy.float32)]
     
-    def processMol(self, m, smiles):
+    def processMol(self, m, smiles, internalParsing=False):
         return [float('nan')]*4
 NanDescriptors()
 
