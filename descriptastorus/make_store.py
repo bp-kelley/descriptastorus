@@ -5,11 +5,14 @@ from rdkit.Chem import AllChem
 
 import multiprocessing
 import time, os, sys, numpy, shutil
+import logging
 from descriptastorus import MolFileIndex, raw
 try:
     import kyotocabinet
 except:
     kyotocabinet = None
+    logging.warning("No kyotocabinet available")
+    raise
     
 # args.storage
 # args.smilesfile
@@ -35,36 +38,50 @@ class MakeStorageOptions:
         self.hasHeader = hasHeader
         self.index_inchikey = index_inchikey
 
+# ugly multiprocessing nonesense
+#  this makes this really not threadsafe
 props = []
 
 def process( job ):
     res = []
-    for index,smiles in job:
-        counts = props[0].process(smiles)
-        if not counts:
-            continue
-        res.append((index,counts))
+    try:
+        smiles = [s for _,s in job]
+        _, results = props[0].processSmiles(smiles)
+        if len(smiles) != len(results):
+            logging.error("Failed batch from index %s to %s"%(
+                job[0][0], job[-1][0]))
+            return []
+                          
+
+        return tuple(((index, result)
+                      for (index,smiles), result in zip(job, results) if result))
+    except Exception, x:
+        import traceback
+        traceback.print_exc()
 
     return res
 
 def processInchi( job ):
     res = []
-    for index,smiles in job:
-        try:
-            m = AllChem.MolFromSmiles(smiles)
-        except:
-            continue
+    try:
+        smiles = [s for _,s in job]
+        mols, results = props[0].processSmiles(smiles)
+        if len(smiles) != len(results):
+            logging.error("Failed batch from index %s to %s"%(
+                job[0][0], job[-1][0]))
+            return []
         
-        if not m:
-            continue
-        
-        counts = props[0].processMol(m, smiles)
-        inchi = AllChem.MolToInchi(m)
-        key = AllChem.InchiToInchiKey(inchi)
+        for (index, smiles), result in zip(job, results):
+            m = mols[index]
+            if result:
+                inchi = AllChem.MolToInchi(m)
+                key = AllChem.InchiToInchiKey(inchi)
+                res.append((index, result, inchi, key))
 
-        if not counts:
-            continue
-        res.append((index,counts,inchi,key))
+        return res
+    except Exception, x:
+        import traceback
+        traceback.print_exc()
 
     return res
 
@@ -128,9 +145,12 @@ def make_store(options):
             joblist = []
             for cpuidx in range(num_cpus):
                 jobs = []
+
                 for i in range(count, min(count+batchsize, sm.N)):
                     jobs.append((i,sm.getMol(i)))
-                count = i+1
+
+                if i+1 > count:
+                    count = i+1
                 if jobs:
                     joblist.append(jobs)
             if not joblist:
@@ -153,7 +173,8 @@ def make_store(options):
 
                 if options.index_inchikey:
                     for i,v,inchi,key in result:
-                        s.putRow(i, v)
+                        if v:
+                            s.putRow(i, v)
                         if inchi in inchies:
                             inchies[key].append(i)
                         else:
@@ -161,14 +182,19 @@ def make_store(options):
 
                         if options.nameColumn != -1:
                             name = sm.getName(i)
-                            name_cabinet[name] = i
+                            if name in name_cabinet:
+                                print("WARNING: name %s duplicated at molecule %d and %d"%(
+                                    name, name_cabinet[name], i))
+                            else:
+                                name_cabinet[name] = i
 
-                else:
+                elif options.nameColumn != -1:
                     for i,v in result:
-                        s.putRow(i, v)
+                        if v:
+                            s.putRow(i, v)
                         name = sm.getName(i)
                         if name in name_cabinet:
-                            print("WARNING: name %s duplicated at molecule %d and %d"%(
+                            print("WARNING: name %s duplicated at molecule %s and %s"%(
                                 name, name_cabinet[name], i))
                         else:
                             name_cabinet[name] = i

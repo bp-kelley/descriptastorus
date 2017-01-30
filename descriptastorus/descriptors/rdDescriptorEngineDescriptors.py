@@ -4,7 +4,7 @@ Please modify as necessary
 """
 from __future__ import print_function
 from rdkit import Chem
-from rdkit.Chem import Descriptors, MolFromSmiles
+from rdkit.Chem import Descriptors, MolFromSmiles, MolToSmiles
 from rdkit.Chem import rdMolDescriptors as rd
 from rdkit.Avalon import pyAvalonTools
 import numpy,sys
@@ -27,9 +27,12 @@ class DescriptorEngineDescriptors(DescriptorGenerator):
         """Returns [(name, numpy.dtype), ...] for all columns being computed"""
         return self.columns
 
-    def molFromSmiles(self, True):
+    def molFromSmiles(self, smiles):
         return MolFromSmiles(pyAvalonTools.GetCanonSmiles(smiles, True))
-        
+
+    def molFromMol(self, mol):
+        return MolFromSmiles(pyAvalonTools.GetCanonSmiles(MolToSmiles(mol, True), True))
+    
     @staticmethod
     def get(values, key, smiles):
         r = values.get(key, None)
@@ -38,14 +41,23 @@ class DescriptorEngineDescriptors(DescriptorGenerator):
             return float('nan')
         return r
     
-    def processMol(self, m, smiles):
+    def processMol(self, m, smiles, internalParsing=False):
+        # we need to use a canonical ordering for the molecule
+        #  for some versions of MoKa, this is Avalon ordering
+        #  by default and for historical reasons
+        if not internalParsing:
+            m = self.molFromMol(m)
+            
         res = self.engine.calculate([m])
         values = res[0]
         result = [ self.get(values, name, smiles) for name in self.descriptors ]
         return result
 
-    def processMols(self, mols, smiles):
+    def processMols(self, mols, smiles, internalParsing=False):
         results = []
+        if not internalParsing:
+            mols = [self.molFromMol(m) for m in mols]
+            
         res = self.engine.calculate(mols)
         for i in range(len(mols)):
             values = res[i]
@@ -54,24 +66,6 @@ class DescriptorEngineDescriptors(DescriptorGenerator):
             assert 'None' not in v
             results.append(v)
         return results
-        
-    def process(self, smiles):
-        """smiles
-        generate descriptors from a smiles string using the specified
-        properties.  
-
-        Default is to return morgan3 folded counts clipped to 255 and
-        use rdkit 2D properties.
-        """
-        try:
-            m = Chem.MolFromSmiles(smiles)
-        except:
-            return None
-
-        if m == None:
-            return None
-
-        return self.processMol(m, smiles)
 
 try:    
     DescriptorEngineDescriptors()

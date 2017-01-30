@@ -1,5 +1,6 @@
+from __future__ import print_function
 from rdkit import Chem
-import logging
+import logging, sys
 
 class DescriptorGenerator:
     REGISTRY = {}
@@ -12,23 +13,47 @@ class DescriptorGenerator:
 
     def molFromSmiles(self, smiles):
         return Chem.MolFromSmiles(smiles)
-    
+
     def GetColumns(self):
         """Returns [(name, numpy.dtype), ...] for all columns being computed"""
         raise NotImplementedError
 
-    def processMol(self, m, smiles):
-        """rdmol, smiles
+    def processMol(self, m, smiles, internalParsing=False):
+        """rdmol, smiles -> result
         generate descriptors from a smiles string using the specified
         properties.  
 
-        Default is to return morgan3 folded counts clipped to 255 and
-        use rdkit 2D properties.
+        Takes the molecule as-is.  Calling this directly requires the User
+        to properly prepare the molecule
         """
         raise NotImplementedError
+    
+    def processMols(self, mols, smiles, internalParsing=False):
+        """mols, smiles -> results
+        Process the molecules.  Note that smiles
+        may not actually be smiles strings, but molblocks as well
+        this is used for error reporting
+
+        if internalParsing is False, takes the molecules as-is.  Otherwise
+        the molecule was prepared by the DescriptorGenerator by calling the appropriate
+        translation function (i.e. molFromSmiels) (i.e. consistently
+        ordering input for MoKa descriptors)  
+
+        Calling this directly requires the User
+        to properly prepare the molecules if necessary
+        """
+        if len(mols) != len(smiles):
+            raise ValueError("Number of molecules does not match number of unparsed molecules")
+        
+        result = [self.processMol(m, smile, internalParsing)
+                  for m, smile in zip(mols, smiles)]
+        assert len(result) == len(mols)
+        return result
 
     def process(self, smiles):
-        """smiles
+        """smiles string -> descriptors
+        returns None for invalid smiles strings
+
         generate descriptors from a smiles string using the specified
         properties.  
 
@@ -43,12 +68,11 @@ class DescriptorGenerator:
         if mol == None:
             return None
 
-        return self.processMol(mol, smiles)
-
-    def processMols(self, mols, smiles):
-        return [self.processMol(m, smile) for m, smile in zip(mols, smiles)]
+        return self.processMol(mol, smiles, internalParsing=True)
 
     def processSmiles(self, smiles):
+        """smiles -> descriptors
+        Process many smiles string and generate the descriptors"""
         mols = []
         indices = []
         goodsmiles = []
@@ -58,16 +82,24 @@ class DescriptorGenerator:
                 mols.append(m)
                 indices.append(i)
                 goodsmiles.append(smile)
-                
-        results = processMols(mols, goodsmiles)
+
+        results = self.processMols(mols, goodsmiles, internalParsing=True)
+
         if len(indices) == len(smiles):
-            return result
+            return mols, results
 
         else:
+            # default values are None
             all_results = [None] * len(smiles)
-            for idx,result in zip(indicies, results):
+            for idx,result in zip(indices, results):
                 all_results[idx] = result
-            return all_results
+            return mols, all_results
+
+    def processCtab(self, ctab):
+        raise NotImplementedError
+    
+    def processSDF(self, sdf):
+        raise NotImplementedError
         
 class Container(DescriptorGenerator):
     def __init__(self, generators):
@@ -79,16 +111,22 @@ class Container(DescriptorGenerator):
     def GetColumns(self):
         return self.columns
     
-    def processMol(self, m, smiles):
+    def processMol(self, m, smiles, internalParsing=False):
         results = []
         for g in self.generators:
-            results.extend(g.processMol(m,smiles))
+            results.extend(g.processMol(m,smiles, internalParsing))
         return results
 
-    def processMols(self, mols, smiles):
+    def processMols(self, mols, smiles, internalParsing=False):
         results = []
+        for m in mols:
+            results.append([])
+            
         for g in self.generators:
-            results.extend(g.processMols(mols,smiles))
+            for result, newresults in zip(results,
+                                          g.processMols(mols,smiles,
+                                                        internalParsing)):
+                result.extend(newresults)
         return results
     
 

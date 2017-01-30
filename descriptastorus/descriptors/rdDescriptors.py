@@ -39,29 +39,11 @@ class MorganCounts(DescriptorGenerator):
         """Returns [(name, numpy.dtype), ...] for all columns being computed"""
         return self.columns
 
-    def processMol(self, m, smiles):
+    def processMol(self, m, smiles, internalParsing=False):
         counts = list(rd.GetHashedMorganFingerprint(m,
                                                     radius=self.radius, nBits=self.nbits))
         counts = [ clip(x,smiles) for x in counts ]
-        return counts
-        
-    def process(self, smiles):
-        """smiles
-        generate descriptors from a smiles string using the specified
-        properties.  
-
-        Default is to return morgan3 folded counts clipped to 255 and
-        use rdkit 2D properties.
-        """
-        try:
-            m = Chem.MolFromSmiles(smiles)
-        except:
-            return None
-
-        if m == None:
-            return None
-
-        return self.processMol(m, smiles)
+        return counts        
 
 MorganCounts()
 
@@ -96,8 +78,10 @@ class RDKit2D(DescriptorGenerator):
         """Returns [(name, numpy.dtype), ...] for all columns being computed"""
         return self.columns
 
-    def processMol(self, m, smiles):
+    def processMol(self, m, smiles, internalParsing=False):
         return [ applyFunc(name, m) for name, _ in self.columns ]
     
 
 RDKit2D()
+
+    
