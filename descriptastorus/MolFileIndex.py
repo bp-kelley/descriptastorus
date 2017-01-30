@@ -140,16 +140,19 @@ class MolFileIndex:
         return self._get(idx)
     
     def getMol(self, idx):
+        """Returns input data for the molecule"""
         if self.smilesColIdx != -1:
             return self._get(idx)[self.smilesColIdx]
         return self._get(idx)
 
     def getRDMol(self, idx):
+        """Returns the RDKit molecular representation of the input data"""
         data = self._get(idx)
         if self.smilesColIdx != -1:
             m = AllChem.MolFromSmiles(data[0])
-            if len(data) > 0:
-                m.SetProp("_Name", data[1])
+            if m:
+                if len(data) > 0:
+                    m.SetProp("_Name", data[1])
             return m
         return AllChem.MolFromMolBlock(data)
     
