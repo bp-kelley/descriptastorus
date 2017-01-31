@@ -144,16 +144,23 @@ def make_store(options):
         while 1:
             lastcount = count
             joblist = []
+            names = {}
             for cpuidx in range(num_cpus):
                 jobs = []
-
-                for i in range(count, min(count+batchsize, sm.N)):
-                    jobs.append((i,sm.getMol(i)))
-
+                if options.nameColumn != -1:
+                    for i in range(count, min(count+batchsize, sm.N)):
+                        jobs.append((i,sm.getMol(i)))
+                        names[i] = sm.getName(i)
+                else:
+                    for i in range(count, min(count+batchsize, sm.N)):
+                        jobs.append((i,sm.getMol(i)))
+                        
                 if i+1 > count:
                     count = i+1
+                    
                 if jobs:
                     joblist.append(jobs)
+                    
             if not joblist:
                 break
 
@@ -163,8 +170,9 @@ def make_store(options):
             else:
                 results = pool.map(process, joblist)
             procTime = time.time() - t1
-            t1 = time.time()
             
+            t1 = time.time()
+            delta = 0.0
             for result in results:
                 if not badColumnWarning and len(result) == 0:
                     badColumnWarning = True
@@ -185,7 +193,7 @@ def make_store(options):
                             inchies[key] = [i]
 
                         if options.nameColumn != -1:
-                            name = sm.getName(i)
+                            name = names[i]
                             if name in name_cabinet:
                                 print("WARNING: name %s duplicated at molecule %d and %d"%(
                                     name, name_cabinet[name], i))
@@ -196,14 +204,14 @@ def make_store(options):
                     for i,v in result:
                         if v:
                             s.putRow(i, v)
-                        name = sm.getName(i)
+                        name = names[i]
                         if name in name_cabinet:
                             print("WARNING: name %s duplicated at molecule %s and %s"%(
                                 name, name_cabinet[name], i))
                         else:
                             name_cabinet[name] = i
             storeTime = time.time() - t1
-            print("Done with %s out of %s.  Processing time %s store time %s"%(
+            print("Done with %s out of %s.  Processing time %0.2f store time %0.2f"%(
                 count, sm.N, procTime, storeTime), file=sys.stderr)
 
         if options.index_inchikey:
