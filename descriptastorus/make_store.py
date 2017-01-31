@@ -2,7 +2,7 @@ from __future__ import print_function
 from . import DescriptaStore, MolFileIndex
 from .descriptors import MakeGenerator
 from rdkit.Chem import AllChem
-
+import pickle
 import multiprocessing
 import time, os, sys, numpy, shutil
 import logging
@@ -28,7 +28,7 @@ except:
 class MakeStorageOptions:
     def __init__(self, storage, smilesfile, 
                  hasHeader, smilesColumn, nameColumn, seperator,
-                 descriptors, index_inchikey, batchsize=1000):
+                 descriptors, index_inchikey, batchsize=1000, **kw):
         self.storage = storage
         self.smilesfile = smilesfile
         self.smilesColumn = smilesColumn
@@ -106,6 +106,9 @@ def make_store(options):
         raise IOError("Directory for descriptastorus already exists: %s"%options.storage)
     
     os.mkdir(options.storage)
+    with open(os.path.join(options.storage, "__options__"), 'w') as f:
+        pickle.dump(vars(options), f)
+
     # index the molfile
     indexdir = os.path.join(options.storage, "__molindex__")
 
