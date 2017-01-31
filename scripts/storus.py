@@ -29,7 +29,7 @@ parser.add_argument("--index-inchikey", action="store_true",
 
 parser.add_argument("--smilesColumn", default=0,
                     help="Row index (or header name if the file has a header) for the smiles column")
-parser.add_argument("--nameColumn", default=-1,
+parser.add_argument("--nameColumn", default=None,
                     help="Row index (or header name if the file has a header) for the name column")
 
 parser.add_argument("--seperator", default="\t",
@@ -38,7 +38,13 @@ parser.add_argument("--seperator", default="\t",
 parser.add_argument("--batchsize", default=1000, type=int,
                     help="Batchsize for chunking up the data for processing")
 
+parser.add_argument("--verbose",  action="store_true",
+                    help="Verbose logging")
+
 opts = parser.parse_args()
+if opts.verbose:
+    logging.getLogger().setLevel(logging.INFO)
+    
 make_store.make_store(opts)
 
 
