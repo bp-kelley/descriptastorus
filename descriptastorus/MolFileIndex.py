@@ -86,7 +86,7 @@ class MolFileIndex:
                                      len(row),
                                      self.sep))
         self.nameidx = -1
-        if self.nameColumn != -1:
+        if self.nameColumn is not None:
             try:
                 self.nameidx = int(self.nameColumn)
             except ValueError:
