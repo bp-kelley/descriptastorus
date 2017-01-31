@@ -74,6 +74,7 @@ class DescriptorGenerator:
         """smiles -> descriptors
         Process many smiles string and generate the descriptors"""
         mols = []
+        allmols = []
         indices = []
         goodsmiles = []
         for i,smile in enumerate(smiles):
@@ -82,18 +83,17 @@ class DescriptorGenerator:
                 mols.append(m)
                 indices.append(i)
                 goodsmiles.append(smile)
-
+            allmols.append(m)
         results = self.processMols(mols, goodsmiles, internalParsing=True)
 
         if len(indices) == len(smiles):
             return mols, results
 
-        else:
-            # default values are None
-            all_results = [None] * len(smiles)
-            for idx,result in zip(indices, results):
-                all_results[idx] = result
-            return mols, all_results
+        # default values are None
+        all_results = [None] * len(smiles)
+        for idx,result in zip(indices, results):
+            all_results[idx] = result
+        return allmols, all_results
 
     def processCtab(self, ctab):
         raise NotImplementedError
