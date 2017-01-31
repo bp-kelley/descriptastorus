@@ -35,7 +35,7 @@ parser.add_argument("--nameColumn", default=-1,
 parser.add_argument("--seperator", default="\t",
                     help="Row index (or header name if the file has a header) for the name column")
 
-parser.add_argument("--batchsize", default=10000, type=int,
+parser.add_argument("--batchsize", default=1000, type=int,
                     help="Batchsize for chunking up the data for processing")
 
 opts = parser.parse_args()
