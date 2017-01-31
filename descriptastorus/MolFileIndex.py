@@ -137,7 +137,16 @@ class MolFileIndex:
         return a list if the data is a smiles like file
         returns a string buffer otherwise
         """
-        return self._get(idx)
+        v = self._get(idx)
+        if self.smilesColIdx != -1:
+            moldata = v[self.smilesColIdx]
+            if self.nameidx != -1:
+                name = v[self.nameidx]
+                return moldata, name
+            return moldata
+	if self._nameGetter:
+            return v, self._nameGetter(v)
+        return v
     
     def getMol(self, idx):
         """Returns input data for the molecule"""

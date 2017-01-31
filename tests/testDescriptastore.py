@@ -85,6 +85,7 @@ class TestCase(unittest.TestCase):
                     m = store.molIndex().getRDMol(i)
                     inchi = AllChem.InchiToInchiKey(AllChem.MolToInchi(m))
                     self.assertEqual( store.lookupInchiKey(inchi), [i])
+                    
 
 
         finally:
@@ -108,6 +109,8 @@ class TestCase(unittest.TestCase):
                                                   index_inchikey=False )
             make_store.make_store(opts)
 
+            origdata = many_smiles.split("\n")
+            
             with contextlib.closing(DescriptaStore(storefname)) as store:
                 for i in range(10):
                     self.assertEqual( store.lookupName(str(i)), i)
@@ -124,6 +127,9 @@ class TestCase(unittest.TestCase):
                 self.assertEqual(store.descriptors().get(9), (204.187800768, 0.0, 1.0, 0.0, 1.0))       
                 for i in range(10):
                     m = store.molIndex().getRDMol(i)
+                    smiles, name = store.molIndex().get(i)
+                    self.assertEqual(name, str(i))
+                    self.assertEqual(smiles, origdata[i].split()[0])
 
 
         finally:
