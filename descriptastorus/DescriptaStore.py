@@ -1,7 +1,7 @@
 from __future__ import print_function
 from . import raw
 from . import MolFileIndex
-import os, sys, contextlib
+import os, sys, contextlib, pickle
 
 try:
     import kyotocabinet
@@ -29,7 +29,12 @@ class DescriptaStore:
          
         >>> store = DescriptaStore(db)
         >>> len(store)
-      
+
+        # access the options used to create this store
+        #  (this is optional and may not exist)
+        >>> store.options
+        ...
+        
         Iterate through molecule data ([moldata, <optional name>], descriptors)
         >>> for moldata, descriptors in store:
         >>>     pass
@@ -71,6 +76,12 @@ class DescriptaStore:
         else:
             print("Couldn't open name db", name, file=sys.stderr)
             self.name = None
+
+        self.options = None
+        optionsfile = os.path.join(dbdir, "__options__")
+        if os.path.exists(optionsfile):
+            with open(optionsfile) as f:
+                self.options = pickle.load(f)
 
     def close(self):
         self.db.close()
