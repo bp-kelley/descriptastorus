@@ -149,7 +149,7 @@ def make_store(options):
             names = {}
             for cpuidx in range(num_cpus):
                 jobs = []
-                if options.nameColumn != -1:
+                if options.nameColumn is not None:
                     for i in range(count, min(count+batchsize, sm.N)):
                         jobs.append((i,sm.getMol(i)))
                         names[i] = sm.getName(i)
@@ -194,7 +194,7 @@ def make_store(options):
                         else:
                             inchies[key] = [i]
 
-                        if options.nameColumn != -1:
+                        if options.nameColumn is not None:
                             name = names[i]
                             if name in name_cabinet:
                                 print("WARNING: name %s duplicated at molecule %d and %d"%(
@@ -202,7 +202,7 @@ def make_store(options):
                             else:
                                 name_cabinet[name] = i
 
-                elif options.nameColumn != -1:
+                elif options.nameColumn is not None:
                     for i,v in result:
                         if v:
                             s.putRow(i, v)
@@ -212,6 +212,7 @@ def make_store(options):
                                 name, name_cabinet[name], i))
                         else:
                             name_cabinet[name] = i
+                            
             storeTime = time.time() - t1
             print("Done with %s out of %s.  Processing time %0.2f store time %0.2f"%(
                 count, sm.N, procTime, storeTime), file=sys.stderr)
