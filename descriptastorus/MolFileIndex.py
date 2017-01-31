@@ -36,7 +36,7 @@ class MolFileIndex:
 
 
         self.db = raw.RawStore(indexDirectory)
-
+        self._nameGetter = None
         self.filename = options['filename']
         self.hasHeader = options['hasHeader']
         self.smilesColumn = options['smilesColumn']
