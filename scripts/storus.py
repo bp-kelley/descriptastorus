@@ -44,8 +44,9 @@ parser.add_argument("--verbose",  action="store_true",
 opts = parser.parse_args()
 if opts.verbose:
     logging.getLogger().setLevel(logging.INFO)
-    
-make_store.make_store(opts)
+
+
+make_store.make_store(make_store.MakeStorageOptions(**vars(opts)))
 
 
         
