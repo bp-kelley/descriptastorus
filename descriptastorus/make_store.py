@@ -37,7 +37,7 @@ class MakeStorageOptions:
         self.descriptors = descriptors
         self.hasHeader = hasHeader
         self.index_inchikey = index_inchikey
-        self.batchsize = batchsize
+        self.batchsize = int(batchsize)
 
 # ugly multiprocessing nonesense
 #  this makes this really not threadsafe
