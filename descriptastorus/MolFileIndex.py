@@ -85,7 +85,7 @@ class MolFileIndex:
                                      self.smilesColIdx,
                                      len(row),
                                      self.sep))
-
+        self.nameidx = -1
         if self.nameColumn != -1:
             try:
                 self.nameidx = int(self.nameColumn)
