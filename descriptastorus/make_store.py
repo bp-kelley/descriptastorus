@@ -157,11 +157,14 @@ def make_store(options):
             if not joblist:
                 break
 
+            t1 = time.time()
             if options.index_inchikey:
                 results = pool.map(processInchi, joblist)
             else:
                 results = pool.map(process, joblist)
-
+            procTime = time.time() - t1
+            t1 = time.time()
+            
             for result in results:
                 if not badColumnWarning and len(result) == 0:
                     badColumnWarning = True
@@ -199,8 +202,9 @@ def make_store(options):
                                 name, name_cabinet[name], i))
                         else:
                             name_cabinet[name] = i
-
-            print("Done with %s out of %s"%(count, sm.N), file=sys.stderr)
+            storeTime = time.time() - t1
+            print("Done with %s out of %s.  Processing time %s store time %s"%(
+                count, sm.N, procTime, storeTime), file=sys.stderr)
 
         if options.index_inchikey:
             print("Indexing inchies", file=sys.stderr)
