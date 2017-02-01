@@ -38,6 +38,9 @@ parser.add_argument("--seperator", default="\t",
 parser.add_argument("--batchsize", default=1000, type=int,
                     help="Batchsize for chunking up the data for processing")
 
+parser.add_argument("--numprocs", default=-1, type=int,
+                    help="Number of processers to use (-1 means use all available")
+
 parser.add_argument("--verbose",  action="store_true",
                     help="Verbose logging")
 

@@ -28,7 +28,7 @@ except:
 class MakeStorageOptions:
     def __init__(self, storage, smilesfile, 
                  hasHeader, smilesColumn, nameColumn, seperator,
-                 descriptors, index_inchikey, batchsize=1000, **kw):
+                 descriptors, index_inchikey, batchsize=1000, numprocs=-1, **kw):
         self.storage = storage
         self.smilesfile = smilesfile
         self.smilesColumn = smilesColumn
@@ -38,6 +38,7 @@ class MakeStorageOptions:
         self.hasHeader = hasHeader
         self.index_inchikey = index_inchikey
         self.batchsize = int(batchsize)
+        self.numprocs = numprocs
 
 # ugly multiprocessing nonesense
 #  this makes this really not threadsafe
@@ -171,7 +172,12 @@ def make_store(options):
             name_cabinet.open(name, kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)
 
 
-        num_cpus = multiprocessing.cpu_count()
+        if options.numprocs == -1:
+            num_cpus = multiprocessing.cpu_count()
+        else:
+            # never use more than the maximum number
+            options.numprocs = min(int(options.numprocs), multiprocessing.cpu_count())
+            
         pool = multiprocessing.Pool(num_cpus)
         print ("Number of molecules to process", numstructs)
 
