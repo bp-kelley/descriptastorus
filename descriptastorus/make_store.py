@@ -86,6 +86,41 @@ def processInchi( job ):
 
     return res
 
+def getJobsAndNames(molindex, options, start, end, batchsize, nprocs, names):
+    jobs = []
+    for i in range(nprocs):
+        jobs.append([])
+
+    last = min(end, start+batchsize*nprocs)
+    for i in range(start, last):
+        moldata, name = molindex.get(i)
+        if name in names:
+            if options.hasHeader:
+                offset = 1
+            else:
+                offset = 0
+                logging.warning("Duplicated name %s at file index %s and %s",
+                                name, names[name]+offset, i+offset)
+        names[name] = i
+
+        jobs[ i%nprocs ].append((i,moldata))
+    # remove empty jobs
+    jobs = [ job for job in jobs if job ]        
+    return jobs, last
+
+def getJobs(molindex, options, start, end, batchsize, nprocs):
+    jobs = []
+    for i in range(nprocs):
+        jobs.append([])
+
+    last = min(end, start+batchsize*nprocs)
+    for i in range(start, last):
+        moldata = molindex.get(i)
+        jobs[ i%nprocs ].append((i,moldata))
+    # remove empty jobs        
+    jobs = [ job for job in jobs if job ]
+    return jobs, last
+
 # not thread safe!
 def make_store(options):
     while props:
@@ -148,65 +183,53 @@ def make_store(options):
         names = {}
         while 1:
             lastcount = count
-            joblist = []
-            for cpuidx in range(num_cpus):
-                jobs = []
-                if options.nameColumn is not None:
-                    for i in range(count, min(count+batchsize, sm.N)):
-                        moldata, name = sm.get(i)
-                        jobs.append((i,moldata))
-                        if name in names:
-                            if options.hasHeader:
-                                offset = 1
-                            else:
-                                offset = 0
-                            logging.warning("Duplicated name %s at file index %s and %s",
-                                            name, names[name]+offset, i+offset)
-                        names[name] = i
-                else:
-                    for i in range(count, min(count+batchsize, sm.N)):
-                        jobs.append((i,sm.getMol(i)))
-                        
-                if i+1 > count:
-                    count = i+1
-                    
-                if jobs:
-                    joblist.append(jobs)
+
+            if options.nameColumn is not None:
+                joblist, count = getJobsAndNames(sm, options, count, numstructs, batchsize, num_cpus, names)
+            else:
+                joblist, count = getJobs(sm, options, count, numstructs, batchsize, num_cpus)
                     
             if not joblist:
                 break
 
+            
             t1 = time.time()
             if options.index_inchikey:
                 results = pool.map(processInchi, joblist)
             else:
                 results = pool.map(process, joblist)
+
+                
             procTime = time.time() - t1
             
-            t1 = time.time()
-            delta = 0.0
-            for result in sorted(results):
+            for result in results:
                 if not badColumnWarning and len(result) == 0:
                     badColumnWarning = True
                     logging.warning("no molecules processed in batch, check the smilesColumn")
-
                     logging.warning("First 10 smiles:\n")
-
                     logging.warning("\n".join(["%i: %s"%(i,sm.get(i)) for i in range(0, min(sm.N,10))]))
 
+                
+            flattened = [val for sublist in results for val in sublist]
+            flattened.sort()
+
+            t1 = time.time()
+            delta = 0.0
+            # flatten the results so that we store them in index order
+            for result in flattened:
                 if options.index_inchikey:
-                    for i,v,inchi,key in result:
-                        if v:
-                            s.putRow(i, v)
-                        if inchi in inchies:
-                            inchies[key].append(i)
-                        else:
-                            inchies[key] = [i]
+                    i,v,inchi,key = result
+                    if v:
+                        s.putRow(i, v)
+                    if inchi in inchies:
+                        inchies[key].append(i)
+                    else:
+                        inchies[key] = [i]
 
                 elif options.nameColumn is not None:
-                    for i,v in result:
-                        if v:
-                            s.putRow(i, v)
+                    i,v = result
+                    if v:
+                        s.putRow(i, v)
                             
             storeTime = time.time() - t1
             logging.info("Done with %s out of %s.  Processing time %0.2f store time %0.2f",

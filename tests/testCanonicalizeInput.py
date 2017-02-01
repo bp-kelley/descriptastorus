@@ -17,9 +17,8 @@ class Canonicalize(DescriptorGenerator):
         return [('count', numpy.float32)]
 
     def molFromSmiles(self, smiles):
-        self.canonicalCount += 1
         m = AllChem.MolFromSmiles(smiles)
-        m.SetProp("ccount", str(self.canonicalCount))
+        m.SetProp("ccount", str(len(smiles)))
         return m
     
     def processMol(self, m, smiles, internalParsing):
@@ -49,7 +48,9 @@ class TestCase(unittest.TestCase):
                 counts = []
                 for i in range(10):
                     r = store.descriptors().get(i)
-                    self.assertEqual(r[0], i+1)
+                    counts.append(r[0])
+                counts.sort()
+                self.assertEquals(counts, list(range(8,18)))
 
 
                 
@@ -74,14 +75,14 @@ class TestCase(unittest.TestCase):
                                                   seperator=" ", descriptors="Canonicalize",
                                                   index_inchikey=False )
             make_store.make_store(opts)
-            
+
             with contextlib.closing(DescriptaStore(storefname)) as store:
                 counts = []
                 for i in range(10):
                     r = store.descriptors().get(i)
-                    self.assertEqual(r[0], i+1)
-
-
+                    counts.append(r[0])
+                counts.sort()
+                self.assertEquals(counts, list(range(8,18)))
                 
         finally:
             if os.path.exists(fname):
