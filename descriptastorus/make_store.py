@@ -97,8 +97,7 @@ def make_store(options):
     
     inchiKey = options.index_inchikey
     if inchiKey and not kyotocabinet:
-        print("Indexing inchikeys requires kyotocabinet, please install kyotocabinet",
-              file=sys.stderr)
+        logging.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet")
         return False
     
     # make the storage directory
@@ -189,12 +188,11 @@ def make_store(options):
             for result in sorted(results):
                 if not badColumnWarning and len(result) == 0:
                     badColumnWarning = True
-                    print("WARNING: no molecules processed in batch, check the smilesColumn",
-                          file=sys.stderr)
-                    print("WARNING: First 10 smiles:\n",
-                          file=sys.stderr)
-                    print("\n".join(["%i: %s"%(i,sm.get(i)) for i in range(0, min(sm.N,10))]),
-                          file=sys.stderr)
+                    logging.warning("no molecules processed in batch, check the smilesColumn")
+
+                    logging.warning("First 10 smiles:\n")
+
+                    logging.warning("\n".join(["%i: %s"%(i,sm.get(i)) for i in range(0, min(sm.N,10))]))
 
                 if options.index_inchikey:
                     for i,v,inchi,key in result:
@@ -211,22 +209,22 @@ def make_store(options):
                             s.putRow(i, v)
                             
             storeTime = time.time() - t1
-            print("Done with %s out of %s.  Processing time %0.2f store time %0.2f"%(
-                count, sm.N, procTime, storeTime), file=sys.stderr)
+            logging.info("Done with %s out of %s.  Processing time %0.2f store time %0.2f",
+                count, sm.N, procTime, storeTime)
 
         if options.index_inchikey:
-            print("Indexing inchies", file=sys.stderr)
+            logging.info("Indexing inchies")
             t1 = time.time()
             for k in sorted(inchies):
                 cabinet[k] = repr(inchies[k])
-            print("... indexed in %2.2f seconds"%(time.time()-t1))
+            logging.info("... indexed in %2.2f seconds", (time.time()-t1))
             
         if names:
             t1 = time.time()
-            print("Indexing names", file=sys.stderr)
+            logging.info("Indexing names")
             for name in sorted(names):
                 name_cabinet[name] = names[name]
-            print("... indexed in %2.2f seconds"%(time.time()-t1))
+            logging.info("... indexed in %2.2f seconds", (time.time()-t1))
     finally:
         sm.close()
         s.close()
