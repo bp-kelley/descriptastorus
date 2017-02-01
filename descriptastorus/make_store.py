@@ -146,16 +146,24 @@ def make_store(options):
         batchsize = options.batchsize
         badColumnWarning = False
         inchies = {}
+        names = {}
         while 1:
             lastcount = count
             joblist = []
-            names = {}
             for cpuidx in range(num_cpus):
                 jobs = []
                 if options.nameColumn is not None:
                     for i in range(count, min(count+batchsize, sm.N)):
-                        jobs.append((i,sm.getMol(i)))
-                        names[i] = sm.getName(i)
+                        moldata, name = sm.get(i)
+                        jobs.append((i,moldata))
+                        if name in names:
+                            if options.hasHeader:
+                                offset = 1
+                            else:
+                                offset = 0
+                            logging.warning("Duplicated name %s at file index %s and %s",
+                                            name, names[name]+offset, i+offset)
+                        names[name] = i
                 else:
                     for i in range(count, min(count+batchsize, sm.N)):
                         jobs.append((i,sm.getMol(i)))
@@ -178,7 +186,7 @@ def make_store(options):
             
             t1 = time.time()
             delta = 0.0
-            for result in results:
+            for result in sorted(results):
                 if not badColumnWarning and len(result) == 0:
                     badColumnWarning = True
                     print("WARNING: no molecules processed in batch, check the smilesColumn",
@@ -197,24 +205,10 @@ def make_store(options):
                         else:
                             inchies[key] = [i]
 
-                        if options.nameColumn is not None:
-                            name = names[i]
-                            if name in name_cabinet:
-                                print("WARNING: name %s duplicated at molecule %d and %d"%(
-                                    name, name_cabinet[name], i))
-                            else:
-                                name_cabinet[name] = i
-
                 elif options.nameColumn is not None:
                     for i,v in result:
                         if v:
                             s.putRow(i, v)
-                        name = names[i]
-                        if name in name_cabinet:
-                            print("WARNING: name %s duplicated at molecule %s and %s"%(
-                                name, name_cabinet[name], i))
-                        else:
-                            name_cabinet[name] = i
                             
             storeTime = time.time() - t1
             print("Done with %s out of %s.  Processing time %0.2f store time %0.2f"%(
@@ -222,8 +216,17 @@ def make_store(options):
 
         if options.index_inchikey:
             print("Indexing inchies", file=sys.stderr)
+            t1 = time.time()
             for k in sorted(inchies):
                 cabinet[k] = repr(inchies[k])
+            print("... indexed in %2.2f seconds"%(time.time()-t1))
+            
+        if names:
+            t1 = time.time()
+            print("Indexing names", file=sys.stderr)
+            for name in sorted(names):
+                name_cabinet[name] = names[name]
+            print("... indexed in %2.2f seconds"%(time.time()-t1))
     finally:
         sm.close()
         s.close()
