@@ -14,7 +14,7 @@ import sys
 
 def clip(v, name):
     if v > 255:
-        print >> sys.stderr, "%s has >255 counts for a feature vector"%name
+        logging.warning("%s has >255 counts for a feature vector clipping", name)
         v = 255
     return v
         
