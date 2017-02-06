@@ -71,7 +71,12 @@ class RawStore:
             print("Could not seek to index %d at offset %f offset"%(idx, offset), file=sys.stderr)
             raise IndexError("out or range %d"%idx)
         bytes = self.f.read(self.rowbytes)
-        return struct.unpack(self.pack_format, bytes)
+        if "s" not in self.pack_format:
+            return struct.unpack(self.pack_format, bytes)
+        else:
+            return tuple([ x.replace("\x00","") if isinstance(x, str) else x
+                           for x in struct.unpack(self.pack_format, bytes) ])
+            
 
     def getColByIdx(self, column):
         """Return the data in the entire column (lazy generator)"""
@@ -196,6 +201,11 @@ def MakeStore(cols, N, directory, checkDirectoryExists=True):
         elif dtype == numpy.bool:
             type = "?"
             dtypes.append(bool)
+        elif hasattr(dtype, 'type'): # for strings
+            if dtype.type == numpy.string_:
+                size = dtype.itemsize
+                type = "%ss"%size
+                dtypes.append(str)
         else:
             raise ValueError("Unhandled numpy type %s"%dtype)
 

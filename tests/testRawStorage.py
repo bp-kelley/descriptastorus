@@ -1,10 +1,11 @@
+from __future__ import print_function
 import unittest
 from descriptastorus import raw
 from descriptastorus.descriptors import rdDescriptors
 from descriptastorus.descriptors import MakeGenerator
-import contextlib
+import contextlib, sys
 
-import os, shutil
+import numpy, os, shutil
 
 class TestCase(unittest.TestCase):
     def test_raw(self):
@@ -36,6 +37,28 @@ class TestCase(unittest.TestCase):
         finally:
             if os.path.exists(directory):
                 shutil.rmtree(directory)
+
+    def testStringStore(self):
+        try:
+            directory = "test-store"
+            if os.path.exists(directory):
+                shutil.rmtree(directory)
+                
+            with contextlib.closing(raw.MakeStore([('name', numpy.dtype("S80"))],
+                                                  10, directory)) as r:
+                print("*"*44, file=sys.stderr)
+                print(r.pack_format, file=sys.stderr)
+                print("*"*44, file=sys.stderr)
+                for i in range(10):
+                    r.putRow(i, str(i))
+
+                for i in range(10):
+                    self.assertEqual(r.get(i), (str(i),))
+            
+        finally:
+            if os.path.exists(directory):
+                shutil.rmtree(directory)
+    
                       
 if __name__ == '__main__':
     unittest.main()
