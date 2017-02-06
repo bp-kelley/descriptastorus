@@ -82,10 +82,16 @@ class TestCase(unittest.TestCase):
                 self.assertEqual(store.descriptors().get(9), (True, 204.187800768, 0.0, 1.0, 0.0, 1.0))
                 self.assertEqual(store.descriptors().get(10), (False, 0.0, 0.0, 0.0, 0.0, 0.0))
 
+                calc = store.getDescriptorCalculator()
+                
                 for i in range(10):
                     m = store.molIndex().getRDMol(i)
+                    sm = AllChem.MolToSmiles(m)
                     inchi = AllChem.InchiToInchiKey(AllChem.MolToInchi(m))
                     self.assertEqual( store.lookupInchiKey(inchi), [i])
+                    v = store.descriptors().get(i)
+                    sv = tuple(calc.process(sm))
+                    self.assertEqual(v, sv)
                     
 
 

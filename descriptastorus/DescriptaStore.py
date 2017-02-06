@@ -2,6 +2,8 @@ from __future__ import print_function
 from . import raw
 from . import MolFileIndex
 import os, sys, contextlib, pickle
+from descriptors import MakeGenerator
+import logging
 
 try:
     import kyotocabinet
@@ -97,7 +99,17 @@ class DescriptaStore:
 
     def __iter__(self):
         return DescriptaStoreIter(self)
-    
+
+    def getDescriptorCalculator(self):
+        """Returns the descriptor calculator (if possible) for the store
+        In general this requires the same run-time environment as the 
+        storage, so this might not be possible"""
+        try:
+            return MakeGenerator(self.options['descriptors'].split(","))
+        except:
+            logging.exception("Unable to make generator from store")
+            return None
+        
     def descriptors(self):
         """Returns the raw storage for the descriptors"""
         return self.db
