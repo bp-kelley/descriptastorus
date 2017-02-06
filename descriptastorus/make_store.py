@@ -47,7 +47,7 @@ props = []
 
 def process( job ):
     if job:
-        logging.info("Running on %s jobs from index %s to %s",
+        logging.debug("Running on %s jobs from index %s to %s",
                         len(job), job[0][0], job[-1][0])
     else:
         logging.warning("Empty joblist")
@@ -72,7 +72,7 @@ def process( job ):
 
 def processInchi( job ):
     if job:
-        logging.info("Running on %s jobs from index %s to %s",
+        logging.debug("Running on %s jobs from index %s to %s",
                         len(job), job[0][0], job[-1][0])
     else:
         logging.warning("Empty joblist")
