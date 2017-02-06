@@ -1,23 +1,38 @@
 from __future__ import print_function
 from rdkit import Chem
-import logging, sys
+import logging, numpy, sys
 
 class DescriptorGenerator:
     REGISTRY = {}
+    NAME = None
     def __init__(self):
         try:
             self.REGISTRY[self.NAME.lower()] = self
         except:
             logging.exception("DescriptorGenerator must have a NAME (self.NAME)")
             raise
+        # the columns to be actually calculated
+        #  GetColumns returns more columns here.
+        self.columns = []
 
     def molFromSmiles(self, smiles):
+        """Prepare a smiles to a molecule"""
         return Chem.MolFromSmiles(smiles)
 
+    def molFromMol(self, mol):
+        """Do any internal preperation required from a user-mol"""
+        return mol
+    
     def GetColumns(self):
         """Returns [(name, numpy.dtype), ...] for all columns being computed"""
-        raise NotImplementedError
+        if self.NAME:
+            return [ (self.NAME + "_calculated", numpy.bool) ] + self.columns
+        return self.columns
 
+    def calculateMol(self, m, smiles, internalParsing):
+        """Override me for the actual calculation"""
+        raise NotImplementedError
+    
     def processMol(self, m, smiles, internalParsing=False):
         """rdmol, smiles -> result
         generate descriptors from a smiles string using the specified
@@ -25,8 +40,16 @@ class DescriptorGenerator:
 
         Takes the molecule as-is.  Calling this directly requires the User
         to properly prepare the molecule
+
+        The first value returned is always True to indicate that the
+        descriptors have actually been set in the store
         """
-        raise NotImplementedError
+        if not internalParsing:
+            m = self.molFromMol(m)
+            
+        res = [True]
+        res.extend(self.calculateMol(m, smiles, internalParsing))
+        return res
     
     def processMols(self, mols, smiles, internalParsing=False):
         """mols, smiles -> results
@@ -44,7 +67,7 @@ class DescriptorGenerator:
         """
         if len(mols) != len(smiles):
             raise ValueError("Number of molecules does not match number of unparsed molecules")
-        
+
         result = [self.processMol(m, smile, internalParsing)
                   for m, smile in zip(mols, smiles)]
         assert len(result) == len(mols)
@@ -108,9 +131,6 @@ class Container(DescriptorGenerator):
         for g in generators:
             columns.extend(g.GetColumns())
 
-    def GetColumns(self):
-        return self.columns
-    
     def processMol(self, m, smiles, internalParsing=False):
         results = []
         for g in self.generators:

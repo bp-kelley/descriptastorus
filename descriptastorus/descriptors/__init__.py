@@ -1,5 +1,8 @@
 from .DescriptorGenerator import *
 from .rdDescriptors import *
-from .rdDescriptorEngineDescriptors import *
+try:
+    from .rdDescriptorEngineDescriptors import *
+except:
+    pass
 
         

@@ -28,7 +28,7 @@ except:
 class MakeStorageOptions:
     def __init__(self, storage, smilesfile, 
                  hasHeader, smilesColumn, nameColumn, seperator,
-                 descriptors, index_inchikey, batchsize=1000, numprocs=-1, **kw):
+                 descriptors, index_inchikey, batchsize=1000, numprocs=-1, verbose=False, **kw):
         self.storage = storage
         self.smilesfile = smilesfile
         self.smilesColumn = smilesColumn
@@ -39,12 +39,19 @@ class MakeStorageOptions:
         self.index_inchikey = index_inchikey
         self.batchsize = int(batchsize)
         self.numprocs = numprocs
+        self.verbose = verbose
 
 # ugly multiprocessing nonesense
 #  this makes this really not threadsafe
 props = []
 
 def process( job ):
+    if job:
+        logging.info("Running on %s jobs from index %s to %s",
+                        len(job), job[0][0], job[-1][0])
+    else:
+        logging.warning("Empty joblist")
+
     res = []
     try:
         smiles = [s for _,s in job]
@@ -64,6 +71,12 @@ def process( job ):
     return res
 
 def processInchi( job ):
+    if job:
+        logging.info("Running on %s jobs from index %s to %s",
+                        len(job), job[0][0], job[-1][0])
+    else:
+        logging.warning("Empty joblist")
+
     res = []
     try:
         smiles = [s for _,s in job]
@@ -226,7 +239,13 @@ def make_store(options):
                 if options.index_inchikey:
                     i,v,inchi,key = result
                     if v:
-                        s.putRow(i, v)
+                        try:
+                            s.putRow(i, v)
+                        except ValueError:
+                            logging.exception("Columns: %s\nData: %r",
+                                              properties.GetColumns(),
+                                              v)
+                            raise
                     if inchi in inchies:
                         inchies[key].append(i)
                     else:

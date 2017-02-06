@@ -193,6 +193,9 @@ def MakeStore(cols, N, directory, checkDirectoryExists=True):
         elif dtype == numpy.float64:
             type = "d"
             dtypes.append(float)
+        elif dtype == numpy.bool:
+            type = "?"
+            dtypes.append(bool)
         else:
             raise ValueError("Unhandled numpy type %s"%dtype)
 

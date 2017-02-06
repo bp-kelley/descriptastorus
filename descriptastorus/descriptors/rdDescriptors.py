@@ -33,13 +33,9 @@ class MorganCounts(DescriptorGenerator):
         self.radius = radius
         self.nbits = nbits
         morgan = [("m3-%d"%d, numpy.uint8) for d in range(nbits)]
-        self.columns = morgan
+        self.columns += morgan
 
-    def GetColumns(self):
-        """Returns [(name, numpy.dtype), ...] for all columns being computed"""
-        return self.columns
-
-    def processMol(self, m, smiles, internalParsing=False):
+    def calculateMol(self, m, smiles, internalParsing=False):
         counts = list(rd.GetHashedMorganFingerprint(m,
                                                     radius=self.radius, nBits=self.nbits))
         counts = [ clip(x,smiles) for x in counts ]
@@ -67,19 +63,16 @@ class RDKit2D(DescriptorGenerator):
         if not properties:
             self.columns = [ (name, numpy.float64) for name,func in sorted(Descriptors.descList) ]
         else:
-            columns = self.columns = []
+            columns = self.columns
             for name in properties:
                 if name in sorted(FUNCS):
                     columns.append((name, numpy.float64))
                 else:
                     raise KeyError("Unable to find specified property %s"%name)
         
-    def GetColumns(self):
-        """Returns [(name, numpy.dtype), ...] for all columns being computed"""
-        return self.columns
-
-    def processMol(self, m, smiles, internalParsing=False):
-        return [ applyFunc(name, m) for name, _ in self.columns ]
+    def calculateMol(self, m, smiles, internalParsing=False):
+        res = [ applyFunc(name, m) for name, _ in self.columns ]
+        return res
     
 
 RDKit2D()
