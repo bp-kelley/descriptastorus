@@ -22,10 +22,10 @@ DEFAULT_DESCRIPTORS="rdkit:Chi2v,moka:fractionIonized(pH=10.0),rdkit:Kappa2,rdki
 class DescriptorEngineDescriptors(DescriptorGenerator):
     NAME="DescriptorEngineDescriptors"
     def __init__(self, descriptors=DEFAULT_DESCRIPTORS):
+        DescriptorGenerator.__init__(self)
         self.descriptors = descriptors.strip().split(",")
         self.engine = DescriptorEngine.GetDescriptorCalculator(self.descriptors)
         self.columns += [(name, numpy.float64) for name in self.descriptors]
-        DescriptorGenerator.__init__(self)
 
     def molFromSmiles(self, smiles):
         return MolFromSmiles(pyAvalonTools.GetCanonSmiles(smiles, True))
