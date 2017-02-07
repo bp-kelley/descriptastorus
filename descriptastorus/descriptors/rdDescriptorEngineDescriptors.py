@@ -17,11 +17,11 @@ import logging
 from rdkit.Novartis import DescriptorEngine
 from rdkit import Chem
 
-DEFAULT_DESCRIPTORS="rdkit:Chi2v,moka:fractionIonized(pH=10.0),rdkit:Kappa2,rdkit:Kappa1,rdkit:NHOHCount,rdkit:Chi2n,rdkit:HeavyAtomCount,molvol:volume,rdkit:NumHeteroatoms,rdkit:FpDensityMorgan1,rdkit:FpDensityMorgan2,rdkit:HeavyAtomMolWt,rdkit:MinAbsEStateIndex,rdkit:VSA_EState10,rdkit:BertzCT,rdkit:Kappa3,rdkit:MinAbsPartialCharge,rdkit:SMR_VSA6,rdkit:FractionCSP3,rdkit:MinEStateIndex,rdkit:SMR_VSA5,rdkit:SMR_VSA4,rdkit:SMR_VSA7,basic:NumHDonors,rdkit:SMR_VSA1,rdkit:SMR_VSA3,rdkit:MaxAbsEStateIndex,rdkit:NumAromaticHeterocycles,rdkit:SMR_VSA9,rdkit:SMR_VSA8,rdkit:Chi0,rdkit:Chi1,rdkit:NOCount,basic:NumRotatableBonds,basic:NumAmides,rdkit:Chi0v,rdkit:NumSaturatedRings,rdkit:Chi0n,rdkit:SlogP_VSA6,rdkit:SlogP_VSA7,rdkit:SlogP_VSA4,rdkit:MolLogP,rdkit:SlogP_VSA2,rdkit:SlogP_VSA3,rdkit:SlogP_VSA1,rdkit:MaxPartialCharge,rdkit:SlogP_VSA8,rdkit:SlogP_VSA9,rdkit:VSA_EState4,rdkit:qed,rdkit:VSA_EState8,rdkit:VSA_EState9,rdkit:VSA_EState6,rdkit:VSA_EState7,rdkit:Chi3v,rdkit:VSA_EState5,rdkit:VSA_EState2,rdkit:VSA_EState3,rdkit:VSA_EState1,rdkit:MaxAbsPartialCharge,rdkit:Chi3n,rdkit:MolMR,rdkit:Ipc,rdkit:TPSA,rdkit:ExactMolWt,basic:NumHAcceptors,rdkit:RingCount,rdkit:SMR_VSA2,rdkit:NumAromaticRings,rdkit:EState_VSA10,rdkit:EState_VSA11,rdkit:NumAromaticCarbocycles,rdkit:FpDensityMorgan3,rdkit:MaxEStateIndex,rdkit:MolWt,rdkit:HallKierAlpha,rdkit:Chi1v,rdkit:NumRotatableBonds,rdkit:Chi1n,rdkit:LabuteASA,rdkit:PEOE_VSA14,rdkit:PEOE_VSA11,rdkit:PEOE_VSA10,rdkit:PEOE_VSA13,rdkit:PEOE_VSA12,rdkit:NumValenceElectrons,rdkit:NumRadicalElectrons,rdkit:NumHAcceptors,rdkit:EState_VSA4,rdkit:EState_VSA5,rdkit:EState_VSA6,rdkit:EState_VSA7,basic:FlexIndex,rdkit:EState_VSA1,rdkit:EState_VSA2,rdkit:EState_VSA3,rdkit:EState_VSA8,rdkit:EState_VSA9,rdkit:SMR_VSA10,basic:mw,rdkit:MinPartialCharge,rdkit:Chi4n,rdkit:Chi4v,basic:psa,rdkit:NumHDonors,moka:fractionIonized(pH=4.0),moka:logD(pH=12.0),rdkit:NumAliphaticCarbocycles,rdkit:NumAliphaticRings,rdkit:SlogP_VSA10,rdkit:SlogP_VSA11,rdkit:SlogP_VSA12,rdkit:BalabanJ,rdkit:NumSaturatedCarbocycles,rdkit:PEOE_VSA9,rdkit:PEOE_VSA8,rdkit:SlogP_VSA5,rdkit:NumAliphaticHeterocycles,rdkit:PEOE_VSA1,rdkit:PEOE_VSA3,rdkit:PEOE_VSA2,rdkit:PEOE_VSA5,rdkit:PEOE_VSA4,rdkit:PEOE_VSA7,rdkit:PEOE_VSA6,moka:logD(pH=7.4),rdkit:NumSaturatedHeterocycles"
+RDKIT_DESCRIPTORS = "basic:NumAmides,basic:NumHAcceptors,basic:NumHDonors,basic:NumRotatableBonds,basic:mw,rdkit:BalabanJ,rdkit:BertzCT,rdkit:Chi0,rdkit:Chi0n,rdkit:Chi0v,rdkit:Chi1,rdkit:Chi1n,rdkit:Chi1v,rdkit:Chi2n,rdkit:Chi2v,rdkit:Chi3n,rdkit:Chi3v,rdkit:Chi4n,rdkit:Chi4v,rdkit:EState_VSA1,rdkit:EState_VSA10,rdkit:EState_VSA11,rdkit:EState_VSA2,rdkit:EState_VSA3,rdkit:EState_VSA4,rdkit:EState_VSA5,rdkit:EState_VSA6,rdkit:EState_VSA7,rdkit:EState_VSA8,rdkit:EState_VSA9,rdkit:ExactMolWt,rdkit:FpDensityMorgan1,rdkit:FpDensityMorgan2,rdkit:FpDensityMorgan3,rdkit:FractionCSP3,rdkit:HallKierAlpha,rdkit:HeavyAtomCount,rdkit:HeavyAtomMolWt,rdkit:Ipc,rdkit:Kappa1,rdkit:Kappa2,rdkit:Kappa3,rdkit:LabuteASA,rdkit:MaxAbsEStateIndex,rdkit:MaxAbsPartialCharge,rdkit:MaxEStateIndex,rdkit:MaxPartialCharge,rdkit:MinAbsEStateIndex,rdkit:MinAbsPartialCharge,rdkit:MinEStateIndex,rdkit:MinPartialCharge,rdkit:MolLogP,rdkit:MolMR,rdkit:MolWt,rdkit:NHOHCount,rdkit:NOCount,rdkit:NumAliphaticCarbocycles,rdkit:NumAliphaticHeterocycles,rdkit:NumAliphaticRings,rdkit:NumAromaticCarbocycles,rdkit:NumAromaticHeterocycles,rdkit:NumAromaticRings,rdkit:NumHAcceptors,rdkit:NumHDonors,rdkit:NumHeteroatoms,rdkit:NumRadicalElectrons,rdkit:NumRotatableBonds,rdkit:NumSaturatedCarbocycles,rdkit:NumSaturatedHeterocycles,rdkit:NumSaturatedRings,rdkit:NumValenceElectrons,rdkit:PEOE_VSA1,rdkit:PEOE_VSA10,rdkit:PEOE_VSA11,rdkit:PEOE_VSA12,rdkit:PEOE_VSA13,rdkit:PEOE_VSA14,rdkit:PEOE_VSA2,rdkit:PEOE_VSA3,rdkit:PEOE_VSA4,rdkit:PEOE_VSA5,rdkit:PEOE_VSA6,rdkit:PEOE_VSA7,rdkit:PEOE_VSA8,rdkit:PEOE_VSA9,rdkit:RingCount,rdkit:SMR_VSA1,rdkit:SMR_VSA10,rdkit:SMR_VSA2,rdkit:SMR_VSA3,rdkit:SMR_VSA4,rdkit:SMR_VSA5,rdkit:SMR_VSA6,rdkit:SMR_VSA7,rdkit:SMR_VSA8,rdkit:SMR_VSA9,rdkit:SlogP_VSA1,rdkit:SlogP_VSA10,rdkit:SlogP_VSA11,rdkit:SlogP_VSA12,rdkit:SlogP_VSA2,rdkit:SlogP_VSA3,rdkit:SlogP_VSA4,rdkit:SlogP_VSA5,rdkit:SlogP_VSA6,rdkit:SlogP_VSA7,rdkit:SlogP_VSA8,rdkit:SlogP_VSA9,rdkit:TPSA,rdkit:VSA_EState1,rdkit:VSA_EState10,rdkit:VSA_EState2,rdkit:VSA_EState3,rdkit:VSA_EState4,rdkit:VSA_EState5,rdkit:VSA_EState6,rdkit:VSA_EState7,rdkit:VSA_EState8,rdkit:VSA_EState9,rdkit:qed"
 
-class DescriptorEngineDescriptors(DescriptorGenerator):
-    NAME="DescriptorEngineDescriptors"
-    def __init__(self, descriptors=DEFAULT_DESCRIPTORS):
+class DescriptorEngineRDKitDescriptors(DescriptorGenerator):
+    NAME="DescriptorEngineRDKitDescriptors"
+    def __init__(self, descriptors=RDKIT_DESCRIPTORS):
         DescriptorGenerator.__init__(self)
         self.descriptors = descriptors.strip().split(",")
         self.engine = DescriptorEngine.GetDescriptorCalculator(self.descriptors)
@@ -51,19 +51,42 @@ class DescriptorEngineDescriptors(DescriptorGenerator):
         return result
 
 try:    
-    DescriptorEngineDescriptors()
+    DescriptorEngineRDKitDescriptors()
 except Exception, e:
     logging.warning("Unable to load descriptor engine descriptors: %s", str(e))
     
-MOKA_DESCRIPTORS = "moka:fractionIonized(pH=10.0),moka:fractionIonized(pH=4.0),moka:logD(pH=12.0),moka:logD(pH=7.4)"
+MOKA_DESCRIPTORS = "moka:fractionIonized(pH=10.0),moka:fractionIonized(pH=4.0),"\
+                   "moka:logD(pH=12.0),moka:logD(pH=7.4)"
 
 class DescriptorEngineMokaDescriptors(DescriptorEngineDescriptors):
     NAME="DescriptorEngineMokaDescriptors"
     def __init__(self):
         DescriptorEngineDescriptors.__init__(self, MOKA_DESCRIPTORS)
 
-
 try:
     DescriptorEngineMokaDescriptors()
+except Exception, e:
+    logging.warning("Unable to load descriptor engine descriptors: %s", str(e))
+        
+PSACALC_DESCRIPTORS="basic:psa"
+class DescriptorEnginePSADescriptors(DescriptorEngineDescriptors):
+    NAME="DescriptorEnginePSADescriptors"
+    def __init__(self):
+        DescriptorEngineDescriptors.__init__(self, PSACALC_DESCRIPTORS)
+
+try:
+    DescriptorEnginePSADescriptors()
+except Exception, e:
+    logging.warning("Unable to load descriptor engine descriptors: %s", str(e))
+        
+MOLVOL_DESCRIPTORS="molvol:volume"
+class DescriptorEngineMolVolDescriptors(DescriptorEngineDescriptors):
+    NAME="DescriptorEngineMolVolDescriptors"
+    def __init__(self):
+        DescriptorEngineDescriptors.__init__(self, MOLVOL_DESCRIPTORS)
+
+
+try:
+    DescriptorEngineMolVolDescriptors()
 except Exception, e:
     logging.warning("Unable to load descriptor engine descriptors: %s", str(e))
