@@ -61,7 +61,11 @@ class RawStore:
     
     def __iter__(self):
         return RawStoreIter(self)
-    
+
+    def getDict(self, idx):
+        """{colname:value, ...} Return the row at idx as a dictionary"""
+        return {name:v for name, v in zip(self.colnames, self.get(idx))}
+        
     def get(self, idx):
         """Return the row at idx"""
         offset = idx * self.rowbytes

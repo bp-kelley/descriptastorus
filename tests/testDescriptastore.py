@@ -21,6 +21,13 @@ class RDKit2DSubset(RDKit2D):
             'NumAromaticHeterocycles', 'NumAromaticRings'])
 RDKit2DSubset()
 
+def toDict( v ):
+    return {n:x for n,x in zip([
+            'RDKit2DSubset_calculated', 'ExactMolWt',
+            'NumAliphaticRings', 'NumAromaticCarbocycles',
+            'NumAromaticHeterocycles', 'NumAromaticRings'],
+                               v)}
+
 class TestCase(unittest.TestCase):
     def testOffByOne(self):
         try:
@@ -82,6 +89,8 @@ class TestCase(unittest.TestCase):
                 self.assertEqual(store.descriptors().get(9), (True, 204.187800768, 0.0, 1.0, 0.0, 1.0))
                 self.assertEqual(store.descriptors().get(10), (False, 0.0, 0.0, 0.0, 0.0, 0.0))
 
+                self.assertEqual(store.descriptors().getDict(7), toDict((True, 176.15650064, 0.0, 1.0, 0.0, 1.0)))
+
                 calc = store.getDescriptorCalculator()
                 
                 for i in range(10):
@@ -92,8 +101,6 @@ class TestCase(unittest.TestCase):
                     v = store.descriptors().get(i)
                     sv = tuple(calc.process(sm))
                     self.assertEqual(v, sv)
-                    
-
 
         finally:
             if os.path.exists(fname):
