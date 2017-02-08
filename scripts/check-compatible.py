@@ -22,7 +22,15 @@ store1 = DescriptaStore(opts.storage)
 store2 = DescriptaStore(opts.storage2)
 
 if store1.getDescriptorNames() != store2.getDescriptorNames():
-    logging.warning("Storages are not compatable, columns are different")
+    logging.warning("Storages are not compatible, columns are different")
+    if set(store1.getDescriptorNames()) == set(store2.getDescriptorNames()):
+        logging.warning("Columns are the same but reordered")
+        
+    for a,b in zip(store1.getDescriptorNames(),
+                   store2.getDescriptorNames()):
+        if a != b:
+            logging.warning("First differing element %s != %s", a,b)
+            
     sys.exit(1)
     
 # check stores...    
