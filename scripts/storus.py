@@ -10,18 +10,6 @@ import sys
 from rdkit import rdBase
 rdBase.DisableLog("rdApp.*")
 
-class Canonicalize(DescriptorGenerator):
-    NAME="Store"
-    canonicalCount = 0
-    def GetColumns(self):
-        return [('test', numpy.float32)]
-    
-    def processMol(self, m, smiles, internalParsing):
-        return [1.0]
-        
-c = Canonicalize()
-
-
 parser = argparse.ArgumentParser()
 parser.add_argument("smilesfile",
                     help="file containing smiles strings")
