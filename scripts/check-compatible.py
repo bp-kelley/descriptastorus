@@ -29,8 +29,8 @@ if store1.getDescriptorNames() != store2.getDescriptorNames():
     if s1 == s2:
         logging.warning("Columns are the same but reordered")
     else:
-        logging.warning("Extra columns in store1:\n%s", "\n\t".join(s1-s2))
-        logging.warning("Extra columns in store2:\n%s", "\n\t".join(s2-s1))
+        logging.warning("Extra columns in store1:\n\t%s", "\n\t".join(s1-s2))
+        logging.warning("Extra columns in store2:\n\t%s", "\n\t".join(s2-s1))
         
     for i,(a,b) in enumerate(zip(store1.getDescriptorNames(),
                                  store2.getDescriptorNames())):
