@@ -20,7 +20,7 @@ class DescriptaStoreIter:
             raise StopIteration()
 
         try:
-            return self.store.index.get(self.i), self.store.db.get(self.i)
+            return self.store.index.get(self.i), self.store.getDescriptors(self.i)
         except:
             print("== DescriptaStoreIter Failed at index", self.i)
             raise
