@@ -4,7 +4,7 @@ see Description below
 """
 from __future__ import print_function
 from descriptastorus import DescriptaStore
-import argparse, os, shutil, time, random
+import argparse, os, logging, shutil, time, random
 
 import sys
 from rdkit import rdBase
