@@ -85,6 +85,12 @@ class DescriptaStore:
             with open(optionsfile) as f:
                 self.options = pickle.load(f)
 
+        # index the calculated flags
+        datacols = [(i,name) for i,name in enumerate(self.db.colnames) if "_calculated" not in name]
+        self.datanames = [name for i,name in datacols]
+        self.dataindices = [i for i,name in datacols]
+        
+
     def close(self):
         self.db.close()
         self.index.close()
@@ -109,6 +115,27 @@ class DescriptaStore:
         except:
             logging.exception("Unable to make generator from store")
             return None
+
+    def getDescriptorNames(self, keepCalculatedFlags=False):
+        """keepCalculatedFlags=False -> return the descriptor names for the store
+        if keepCalculatedFlags is True return the boolean flags that indicate
+        if results were calculated for the descriptor subset.
+        """
+        if keepCalculatedFlags:
+            return self.db.colnames[:]
+        return self.datanames
+        
+    def getDescriptors(self, index, keepCalculatedFlags=False):
+        """index, keepCalculatedFlags=False -> return the descriptors at index
+        if keepCalculatedFlags is True return the boolean flags that indicate
+        if results were calculated for the descriptor subset.
+        """
+        
+        v = self.db.get(index)
+        if keepCalculatedFlags:
+            return v
+        else:
+            return [v[i] for i in self.dataindices]
         
     def descriptors(self):
         """Returns the raw storage for the descriptors"""
