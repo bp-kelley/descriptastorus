@@ -70,8 +70,10 @@ class DescriptaStore:
         name = os.path.join(dbdir, "name.kch")
         if os.path.exists(name):
             if not kyotocabinet:
-                print("Name lookup exists, but kyotocabinet is not installed.",
-                      file=sys.stderr)
+                logging.warning("Name lookup exists, but kyotocabinet is not installed.")
+                logging.warning("Using memory intensive option")
+                self.name = {name:i for i, (moldata, name) in self.index}
+                    
             else:
                 self.name = kyotocabinet.DB()
                 self.name.open(name, kyotocabinet.DB.OREADER)
