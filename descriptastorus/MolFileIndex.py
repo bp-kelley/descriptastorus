@@ -14,6 +14,16 @@ namefxns = {None: None, "molfile": SDFNameGetter}
 def nameOptFile(indexdir):
     return os.path.join(indexdir, "__opts__")
 
+class MolFileIter:
+    def __init__(self, raw):
+        self.raw = raw
+        self.i = -1
+    def next(self):
+        self.i += 1
+        if self.i >= len(self.raw):
+            raise StopIteration()
+        return self.raw.get(self.i)
+
 class MolFileIndex:
     """Index for a molecule file to provide random access to the internal molecules.
     """
@@ -111,6 +121,12 @@ class MolFileIndex:
     def close(self):
         self.db.close()
         self.f.close()
+
+    def __len__(self):
+        return self.db.N
+    
+    def __iter__(self):
+        return MolFileIter(self)
         
     def _get(self, idx):
         if idx is None:

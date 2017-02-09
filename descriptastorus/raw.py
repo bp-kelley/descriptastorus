@@ -24,7 +24,7 @@ class RawStoreIter:
         self.i = -1
     def next(self):
         self.i += 1
-        if self.i == self.raw.N:
+        if self.i >= self.raw.N:
             raise StopIteration()
         return self.raw.get(self.i)
     
