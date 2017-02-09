@@ -150,11 +150,45 @@ print(d.descriptors().colnames)
 for moldata, descriptors in d:
     smiles, name = moldata
     descriptors # is a numpy array of data morgan3 counts + rdkit descriptors
+```
 
+Note that the descriptors may contain status flags named as "X_Calculated" where X
+is one of the descriptor sets, such as RDKit2D.
+
+These are not returned by the iterator, or through the following api points:
+
+```
+colnames = d.getDescriptorNames()
+descriptors = d.getDescriptors(index)
+for moldata, descriptors in d:
+  ...
+```
+
+To obtain these flags, you can either set the keepCalculatedFlags option
+
+```
+colnames = d.getDescriptorNames(keepCalculatedFlags=True)
+descriptors = d.getDescriptors(keepCalculatedFlags=True)
+```
+
+or use the direct descriptor interface:
+
+```
 # to iterate through only the descriptors:
 for descriptors in d.descriptors():
     ...
+```
 
+# to lookup by name
+rows = []
+for name in names:
+    rows.extend( d.lookupName(name) )
+
+# sorting the rows helps with disk seeking
+rows.sort()
+for row in rows:
+    descriptors = d.getDescriptors(row)
+    ...
 
 # if indexed by inchikey
 rows = []
