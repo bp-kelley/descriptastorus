@@ -4,7 +4,7 @@ see Description below
 """
 from __future__ import print_function
 from descriptastorus import make_store
-import argparse, os, shutil, time
+import argparse, logging, os, shutil, time
 
 import sys
 from rdkit import rdBase
