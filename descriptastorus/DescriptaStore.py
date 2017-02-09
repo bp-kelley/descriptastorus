@@ -76,9 +76,7 @@ class DescriptaStore:
         if os.path.exists(name):
             if not kyotocabinet:
                 logging.warning("Name lookup exists, but kyotocabinet is not installed.")
-                logging.warning("Using memory intensive option")
-                self.name = {name:i for i, (moldata, name) in self.index}
-                    
+                self.name = None
             else:
                 self.name = kyotocabinet.DB()
                 self.name.open(name, kyotocabinet.DB.OREADER)
@@ -159,11 +157,20 @@ class DescriptaStore:
     def lookupName(self, name):
         """name -> returns the index of the given name"""
         if self.name is None:
-            raise ValueError("Name index not available")
+            try:
+                logging.warning("Using slower memory intensive option")
+                logging.warning("Loading names...")
+                self.name = {name:i for i, (moldata, name)
+                             in enumerate(self.index)}
+                logging.warning("...done loading")
+            except:
+                logging.exception("Names not available from original input")
+                raise ValueError("Name index not available")
 
         try:
             row = int(self.name[name])
         except:
+            logging.exception("whups")
             raise IndexError("Name %r not found"%name)
         
         return row

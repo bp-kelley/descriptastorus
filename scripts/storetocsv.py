@@ -4,7 +4,7 @@ see Description below
 """
 from __future__ import print_function
 from descriptastorus import DescriptaStore
-import argparse, csv, os, shutil, time
+import argparse, csv, logging, os, shutil, time
 
 import sys
 from rdkit import rdBase
@@ -54,7 +54,6 @@ if opts.output_name:
     writer.writerow(['Name'] + store.getDescriptorNames(opts.keep_calculatedflags))
 else:        
     writer.writerow(store.getDescriptorNames(opts.keep_calculatedflags))
-assert opts.keep_calculatedflags
 
 if not opts.namefile:
     indices = range(len(store))
@@ -65,7 +64,7 @@ else:
                 idx = store.lookupName(line.strip())
                 yield idx
             except:
-                logging.warning("Name %s not found in store", line.strip())
+                logging.warning("Name %r not found in store", line.strip())
                 continue
     indices = idx_getter(opts.namefile)
     

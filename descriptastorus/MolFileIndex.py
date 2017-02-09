@@ -17,12 +17,17 @@ def nameOptFile(indexdir):
 class MolFileIter:
     def __init__(self, raw):
         self.raw = raw
+        print("Length:", len(self.raw))
         self.i = -1
     def next(self):
         self.i += 1
-        if self.i >= len(self.raw):
+        try:
+
+            if self.i >= len(self.raw):
+                raise StopIteration()
+            return self.raw.get(self.i)
+        except IndexError:
             raise StopIteration()
-        return self.raw.get(self.i)
 
 class MolFileIndex:
     """Index for a molecule file to provide random access to the internal molecules.
