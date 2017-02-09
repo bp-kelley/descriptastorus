@@ -144,6 +144,10 @@ class DescriptaStore:
         else:
             return [v[i] for i in self.dataindices]
         
+    def getDescriptorsAsDict(self, index):
+        """index -> return the descriptors as an index"""
+        return self.db.getDict(index)
+    
     def descriptors(self):
         """Returns the raw storage for the descriptors"""
         return self.db
