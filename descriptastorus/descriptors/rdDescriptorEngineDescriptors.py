@@ -46,10 +46,25 @@ class DescriptorEngineDescriptors(DescriptorGenerator):
     
     def calculateMol(self, m, smiles, internalParsing=False):
         res = self.engine.calculate([m])
-        values = res[0]
+        values = res.get(0, None)
+        if values is None:
+            return None
         result = [ self.get(values, name, smiles) for name in self.descriptors ]
         return result
 
+    def processMols(self, mols, smiles, internalParsing=False):
+        """Sending molecules in a batch to the descriptor calculator is way more efficient"""
+        if not internalParsing:
+            mols = [self.molFromMol(mol) for mol in mols]
+            
+        res = self.engine.calculate(mols)
+        for i in range(len(mols)):
+            values = res.get(i, None)
+            if descriptors:
+                results.append([self.get(values, name, smiles) for name in self.descriptors])
+            else:
+                results.append(None)
+        return results
 try:    
     DescriptorEngineDescriptors()
 except Exception, e:
