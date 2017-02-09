@@ -2,8 +2,13 @@ from __future__ import print_function
 from . import raw
 from . import MolFileIndex
 import os, sys, contextlib, pickle
-from descriptors import MakeGenerator
 import logging
+
+try:
+    from descriptors import MakeGenerator
+except:
+    MakeGenerator = None
+    logging.warning("Unable to make new descriptors, descriptor generator not installed")
 
 try:
     import kyotocabinet
