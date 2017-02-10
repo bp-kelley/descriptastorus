@@ -61,7 +61,7 @@ class DescriptorEngineDescriptors(DescriptorGenerator):
         for i in range(len(mols)):
             values = res.get(i, None)
             if values:
-                results.append([self.get(values, name, smiles) for name in self.descriptors])
+                results.append([True] + [self.get(values, name, smiles) for name in self.descriptors])
             else:
                 results.append(None)
         return results
