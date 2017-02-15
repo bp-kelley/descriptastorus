@@ -1,2 +1,3 @@
-from .DescriptaStore import DescriptaStore, Mode
+from .DescriptaStore import DescriptaStore
+from .raw import Mode
 
