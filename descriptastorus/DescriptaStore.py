@@ -15,6 +15,8 @@ try:
 except ImportError:
     kyotocabinet = None
 
+from raw import Mode
+
 class DescriptaStoreIter:
     def __init__(self, store):
         self.store = store
@@ -31,7 +33,7 @@ class DescriptaStoreIter:
             raise
     
 class DescriptaStore:
-    def __init__(self, dbdir):
+    def __init__(self, dbdir, mode=Mode.READONLY):
         """dbdir -> opens a descriptor storage
          
         >>> store = DescriptaStore(db)
@@ -58,7 +60,7 @@ class DescriptaStore:
         >>>  rows = store.lookupInchiKey("BCWYEXBNOWJQJV-UHFFFAOYSA-N")
         """
         self.desctiporDB = dbdir
-        self.db = raw.RawStore(dbdir)
+        self.db = raw.RawStore(dbdir, mode=mode)
         self.index = MolFileIndex.MolFileIndex(os.path.join(dbdir, "__molindex__"))
 
         inchi = os.path.join(dbdir, "inchikey.kch")
@@ -68,7 +70,11 @@ class DescriptaStore:
                       file=sys.stderr)
             else:
                 self.inchikey = kyotocabinet.DB()
-                self.inchikey.open(inchi, kyotocabinet.DB.OREADER)
+                if mode == Mode.READONLY or mode == READONCE:
+                    self.inchikey.open(inchi, kyotocabinet.DB.OREADER)
+                else:
+                    self.inchikey.open(inchi, kyotocabinet.DB.OWRITER)
+
         else:
             self.inchikey = None
 
@@ -79,7 +85,10 @@ class DescriptaStore:
                 self.name = None
             else:
                 self.name = kyotocabinet.DB()
-                self.name.open(name, kyotocabinet.DB.OREADER)
+                if mode == Mode.READONLY or mode == READONCE:
+                    self.name.open(name, kyotocabinet.DB.OREADER)
+                else:
+                    self.name.open(name, kyotocabinet.DB.OWRITER)
         else:
             print("Couldn't open name db", name, file=sys.stderr)
             self.name = None
