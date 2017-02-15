@@ -70,7 +70,7 @@ class DescriptaStore:
                       file=sys.stderr)
             else:
                 self.inchikey = kyotocabinet.DB()
-                if mode == Mode.READONLY or mode == READONCE:
+                if mode == Mode.READONLY or mode == mode.READONCE:
                     self.inchikey.open(inchi, kyotocabinet.DB.OREADER)
                 else:
                     self.inchikey.open(inchi, kyotocabinet.DB.OWRITER)
@@ -85,7 +85,7 @@ class DescriptaStore:
                 self.name = None
             else:
                 self.name = kyotocabinet.DB()
-                if mode == Mode.READONLY or mode == READONCE:
+                if mode == Mode.READONLY or mode == mode.READONCE:
                     self.name.open(name, kyotocabinet.DB.OREADER)
                 else:
                     self.name.open(name, kyotocabinet.DB.OWRITER)
