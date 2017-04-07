@@ -1,4 +1,6 @@
 from rdkit.Chem import Descriptors
+from rdkit.Chem import rdMolDescriptors as _rdMolDescriptors
+
 import logging
 
 if not hasattr(Descriptors, "qed"):
