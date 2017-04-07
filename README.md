@@ -180,6 +180,8 @@ for descriptors in d.descriptors():
 ```
 
 # to lookup by name
+
+```
 rows = []
 for name in names:
     rows.extend( d.lookupName(name) )
@@ -189,6 +191,7 @@ rows.sort()
 for row in rows:
     descriptors = d.getDescriptors(row)
     ...
+```
 
 # if indexed by inchikey
 rows = []
