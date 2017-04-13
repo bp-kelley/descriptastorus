@@ -193,8 +193,9 @@ for row in rows:
     ...
 ```
 
+# To lookup by inchikey
+
 ```
-# if indexed by inchikey
 rows = []
 for key in inchiKeys:
     rows.extend( d.lookupInchiKey(key) )
