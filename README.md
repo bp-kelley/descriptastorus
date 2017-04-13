@@ -193,6 +193,7 @@ for row in rows:
     ...
 ```
 
+```
 # if indexed by inchikey
 rows = []
 for key in inchiKeys:
