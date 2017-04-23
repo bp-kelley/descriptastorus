@@ -7,7 +7,7 @@ from descriptastorus import DescriptaStore
 from descriptastorus.descriptors import MakeGenerator
 import argparse, os, shutil, time, random
 
-import sys
+import math, sys
 from rdkit import rdBase
 rdBase.DisableLog("rdApp.*")
 
@@ -22,8 +22,8 @@ opts = parser.parse_args()
 store = DescriptaStore(opts.storage)
 
 N = len(store)
-gen = MakeGenerator(store.options['descriptors'].split(","))
-import math
+gen = store.getDescriptorCalculator()
+
 
 randomize=True
 if opts.samples == -1:
