@@ -28,7 +28,8 @@ except:
 class MakeStorageOptions:
     def __init__(self, storage, smilesfile, 
                  hasHeader, smilesColumn, nameColumn, seperator,
-                 descriptors, index_inchikey, batchsize=1000, numprocs=-1, verbose=False, **kw):
+                 descriptors, index_inchikey, batchsize=1000, numprocs=-1, verbose=False,
+                 **kw):
         self.storage = storage
         self.smilesfile = smilesfile
         self.smilesColumn = smilesColumn
