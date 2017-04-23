@@ -1,0 +1,16 @@
+.eggs
+*.egg*
+
+#- Emacs files
+*~
+\#*
+
+#- Binary files
+__pycache__/
+*.so
+*.pyc
+/lib/
+
+#- Files created during build phase
+/build*/
+
