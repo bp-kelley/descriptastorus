@@ -3,12 +3,12 @@ DescriptaStorus
 
 The descriptastorus provides 
 
-  (1) fast random access to rows of properties suitable for
+  1. fast random access to rows of properties suitable for
 machine learning and 
-  (2) fast random access to indexed molecule files
-  (3) A mechanism for generating new descriptors for new molecules
-  (4) A mechanism for validating that you can recreate the same storage in different software/hardware environments
-  (5) An easy script for making your own descriptor files from raw data.
+  2. fast random access to indexed molecule files
+  3. A mechanism for generating new descriptors for new molecules
+  4. A mechanism for validating that you can recreate the same storage in different software/hardware environments
+  5. An easy script for making your own descriptor files from raw data.
 
 An example data set is located at:
 
