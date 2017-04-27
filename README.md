@@ -39,9 +39,9 @@ python setup.py install
 
 Requirements are in the setup.py file, but essentially:
 
-(1) python2/3
-(2) rdkit
-(3) [optional but highly recommended] kyotocabinet
+ 1. python2/3
+ 2. rdkit
+ 3. [optional but highly recommended] kyotocabinet
 
 
 Making a DescriptaStore
