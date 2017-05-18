@@ -5,17 +5,17 @@ import os, sys, contextlib, pickle
 import logging
 
 try:
-    from descriptors import MakeGenerator
+    from .descriptors import MakeGenerator
 except:
     MakeGenerator = None
-    logging.warning("Unable to make new descriptors, descriptor generator not installed")
+    logging.error("Unable to make new descriptors, descriptor generator not installed")
 
 try:
     import kyotocabinet
 except ImportError:
     kyotocabinet = None
 
-from raw import Mode
+from .raw import Mode
 
 class DescriptaStoreIter:
     def __init__(self, store):
@@ -96,7 +96,7 @@ class DescriptaStore:
         self.options = None
         optionsfile = os.path.join(dbdir, "__options__")
         if os.path.exists(optionsfile):
-            with open(optionsfile) as f:
+            with open(optionsfile, 'rb') as f:
                 self.options = pickle.load(f)
 
         # index the calculated flags

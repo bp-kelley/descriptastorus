@@ -8,6 +8,7 @@ import logging
 
 import datahook
 
+
 TEST_DIR = "test-smiles-reindex"
 
 class TestCase(unittest.TestCase):
@@ -38,6 +39,10 @@ class TestCase(unittest.TestCase):
         append_store.append_smiles_file(os.path.join(datahook.datadir, "../data/test1.smi"),
                                         fname, hasHeader=True)
         # now reindex
+        logging.debug(fname)
+        with open(fname) as f:
+            logging.debug(f.read())
+            
         index =  MolFileIndex.MakeSmilesIndex(
             fname, TEST_DIR, hasHeader=True,
             smilesColumn="smiles", nameColumn="name", reIndex=True)
@@ -48,6 +53,7 @@ class TestCase(unittest.TestCase):
 
         self.assertEqual(index.getMol(12+14), 'c1ccccc1CCCCCCCCCCCC')
         self.assertEqual(index.getName(12+14), '13')
+        index.close()
         
     def testReIndexingNoLineEnding(self):
         index = MolFileIndex.MakeSmilesIndex(

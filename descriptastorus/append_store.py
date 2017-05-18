@@ -5,8 +5,9 @@ from rdkit.Chem import AllChem
 import pickle
 import time, os, sys, numpy, shutil
 import logging
-from make_store import process, processInchi, getJobsAndNames, getJobs, props
-import multiprocessing
+from .make_store import process, processInchi, getJobsAndNames, getJobs, props
+import multiprocessing, traceback
+from io import StringIO
 
 from descriptastorus import MolFileIndex, raw
 try:
@@ -15,7 +16,7 @@ except:
     kyotocabinet = None
     logging.warning("No kyotocabinet available")
     raise
-    
+
 class AppendStorageOptions:
     def __init__(self, storage, smilesfile, 
                  hasHeader, smilesColumn, nameColumn, seperator,
@@ -47,21 +48,26 @@ def append_smiles_file(src, dest, hasHeader):
     endsInNewLine = False
     sz = os.path.getsize(dest)
 
-    with open(dest) as f:
+    with open(dest, 'rb') as f:
         f.seek(sz - 1)
-        endsInNewLine = f.read(1) == "\n"
-
+        r = f.read()
+        endsInNewLine = r in ["\n", b'\n']
+    
     # append our new data to the original
     # in the cheapest way possible...
     with open(dest, 'a') as f:
         if not endsInNewLine:
             f.write("\n")
-        for i,line in enumerate(open(src)):
-            if i == 0:
-                if not hasHeader:
+        with open(src) as srcFile:
+            for i,line in enumerate(srcFile):
+                if not line.strip():
+                    continue
+                
+                if i == 0:
+                    if not hasHeader:
+                        f.write(line)
+                else:
                     f.write(line)
-            else:
-                f.write(line)
     
 # not thread safe!
 def append_store(options):
@@ -76,7 +82,7 @@ def append_store(options):
         raise IOError("Directory for descriptastorus does not exist: %s"%options.storage)
     
 
-    with open(os.path.join(options.storage, "__options__")) as f:
+    with open(os.path.join(options.storage, "__options__"), "rb") as f:
         storageOptions = pickle.load(f)
     dbdir = options.storage
     d = DescriptaStore(dbdir, mode=Mode.READONLY)
@@ -216,9 +222,9 @@ def append_store(options):
         if d.inchikey:
             t1 = time.time()
             for k in sorted(inchies):
-                if k in cabinet:
-                    l = eval(cabinet[k])
-                    l += inchies[k]
+                if k in cabinet or str.encode(k) in cabinet:
+                    l1 = eval(cabinet[k])
+                    l = l1 + inchies[k]
                     cabinet[k] = repr(l)
                 else:
                     cabinet[k] = repr(inchies[k])
@@ -227,7 +233,7 @@ def append_store(options):
         if names:
             t1 = time.time()
             for name in sorted(names):
-                if name in name_cabinet:
+                if name in name_cabinet or str.encode(name) in name_cabinet:
                     logging.error("Name %s already exists in database,"
                                   " keeping idx %s (duplicate idx is %s)",
                                   name, name_cabinet[name], names[name])

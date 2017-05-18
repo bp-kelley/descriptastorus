@@ -123,6 +123,10 @@ class MolFileIndex:
                                      self.smilesColIdx,
                                      len(row),
                                      self.sep))
+
+    def __del__(self):
+        self.close()
+        
     def close(self):
         self.db.close()
         self.f.close()
@@ -165,7 +169,7 @@ class MolFileIndex:
                 name = v[self.nameidx]
                 return moldata, name
             return moldata
-	if self._nameGetter:
+        if self._nameGetter:
             return v, self._nameGetter(v)
         return v
     

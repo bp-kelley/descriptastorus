@@ -29,6 +29,12 @@ class RawStoreIter:
         if self.i >= self.raw.N:
             raise StopIteration()
         return self.raw.get(self.i)
+
+def convert_string( v ):
+    if type(v) == str:
+        return str.encode(v)
+    return v
+                
     
 class RawStore:
     def __init__(self, directory, mode=Mode.READONLY):
@@ -109,19 +115,24 @@ class RawStore:
         
     def get(self, idx):
         """Return the row at idx"""
+        if idx >= self.N or idx < 0:
+            raise IndexError("Index out of range %s (0 < %s)",
+                             idx, self.N)
         offset = idx * self.rowbytes
         try:
             self.f.seek(offset,0)
         except ValueError:
-            print("Could not seek to index %d at offset %f offset"%(idx, offset), file=sys.stderr)
+            print("Could not seek to index %d at offset %f offset"%(
+                idx, offset), file=sys.stderr)
             raise IndexError("out or range %d"%idx)
-        bytes = self.f.read(self.rowbytes)
+        
+        _bytes = self.f.read(self.rowbytes)
+        res = struct.unpack(self.pack_format, _bytes)
         if "s" not in self.pack_format:
-            return struct.unpack(self.pack_format, bytes)
+            return res
         else:
-            return tuple([ x.replace("\x00","") if isinstance(x, str) else x
-                           for x in struct.unpack(self.pack_format, bytes) ])
-            
+            return tuple([ str(x).replace("\x00","")
+                           if isinstance(x, (str, bytes)) else x for x in res ])
 
     def getColByIdx(self, column):
         """Return the data in the entire column (lazy generator)"""
@@ -168,7 +179,7 @@ class RawStore:
         throws IndexError if the column doesn't exist."""
         idx = self.colnames.index(column_name)
         return self.getColByIdx(idx)
-        
+
     def putRow(self, idx, row):
         """Put data row in to row idx.
         Checks to see if the data in v is compatible with the column
@@ -188,13 +199,13 @@ class RawStore:
         offset = idx * self.rowbytes
         self.f.seek(offset,0)
         try:
-            bytes = struct.pack(self.pack_format, *row)
+            bytes = struct.pack(self.pack_format, *[convert_string(x) for x  in row])
         except struct.error:
             print("Can't write row %r"%(row), file=sys.stderr)
             raise
         try:
             self.f.write(bytes)
-        except Exception, e:
+        except (Exception, e):
             logging.error("Attempting to write to offset: %s", offset)
             logging.error("Rowsize: %s", self.rowbytes)
             logging.error("Row: %s", idx)
@@ -206,10 +217,15 @@ class RawStore:
     def write(self, row):
         """Writes row with no datatype checking to the end of the file.
         Do not use with putRow/getRow
-        Rows must be written in the correct order"""
+        Rows must be written in the correct order
+        (strings datatypes are currently an issue)
+        """
         bytes = struct.pack(self.pack_format, *row)
         self.f.write(bytes)
 
+def str_store(s):
+    return str.encode(str(s))
+        
 def MakeStore(cols, N, directory, checkDirectoryExists=True):
     if not os.path.exists(directory):
         os.mkdir(directory)
@@ -259,7 +275,7 @@ def MakeStore(cols, N, directory, checkDirectoryExists=True):
             if dtype.type == numpy.string_:
                 size = dtype.itemsize
                 type = "%ss"%size
-                dtypes.append(str)
+                dtypes.append(str_store)
         else:
             raise ValueError("Unhandled numpy type %s"%dtype)
 
@@ -280,10 +296,9 @@ def MakeStore(cols, N, directory, checkDirectoryExists=True):
 
     # Make the storage
     fname = os.path.join(directory, "__store___")
-    f = open(fname, 'wb')
-    f.seek(rowbytes*N)
-    f.write(b'\0')
-    f.close()
+    with open(fname, 'wb') as f:
+        f.seek(rowbytes*N)
+        f.write(b'\0')
 
     # return the store
     return RawStore(directory, Mode.WRITE)

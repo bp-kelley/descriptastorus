@@ -3,6 +3,7 @@ import unittest
 from rdkit.Chem import AllChem
 from descriptastorus import append_store, make_store, DescriptaStore
 from descriptastorus.descriptors.rdDescriptors import RDKit2D
+from descriptastorus import descriptors
 
 import contextlib, tempfile, os, shutil, sys
 import datahook
@@ -30,6 +31,10 @@ def toDict( v ):
                                v)}
 
 class TestCase(unittest.TestCase):
+    def testGenerator(self):
+        gen = descriptors.MakeGenerator(("RDKit2DSubset",))
+        self.assertTrue(gen!=None)
+        
     def testOffByOne(self):
         try:
             fname = tempfile.mktemp()+".smi"

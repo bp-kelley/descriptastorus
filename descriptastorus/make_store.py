@@ -65,7 +65,7 @@ def process( job ):
 
         return tuple(((index, result)
                       for (index,smiles), result in zip(job, results) if result))
-    except Exception, x:
+    except (Exception, x):
         import traceback
         traceback.print_exc()
 
@@ -95,7 +95,7 @@ def processInchi( job ):
                 res.append((index, result, inchi, key))
 
         return res
-    except Exception, x:
+    except (Exception, x):
         import traceback
         traceback.print_exc()
 
@@ -155,7 +155,7 @@ def make_store(options):
         raise IOError("Directory for descriptastorus already exists: %s"%options.storage)
     
     os.mkdir(options.storage)
-    with open(os.path.join(options.storage, "__options__"), 'w') as f:
+    with open(os.path.join(options.storage, "__options__"), 'wb') as f:
         pickle.dump(vars(options), f)
 
     # index the molfile
