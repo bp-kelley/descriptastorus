@@ -1,8 +1,14 @@
 DescriptaStorus
 ===============
 
-The descriptastorus provides (1) fast random access to rows of properties suitable for
-machine learning and (2) fast random access to indexed molecule files
+The descriptastorus provides 
+
+  1. fast random access to rows of properties suitable for
+machine learning and 
+  2. fast random access to indexed molecule files
+  3. A mechanism for generating new descriptors for new molecules
+  4. A mechanism for validating that you can recreate the same storage in different software/hardware environments
+  5. An easy script for making your own descriptor files from raw data.
 
 An example data set is located at:
 
@@ -12,14 +18,15 @@ It contains (for all of magma) the folded morgan counts at radius=3 and nBits=20
 and all of the RDKit 2D descriptors implemented at the C++ layer as well as
 the inchiKey and NVP indices.
 
-[n.b.] kyotocabinet is required to read the inchiKey and name indices
+[n.b.] kyotocabinet is required to read/write the inchiKey and name indices
   This should be installed in your environment.
 
 There are three basic ways to use DescriptaStorus:
 
-  1. Make a use MolFileIndex
-  2. Make a DescriptaStore using a script
-  3. Using a DescriptaStore to access properties
+  
+  1. Make a DescriptaStore using a script
+  2. Append new data to the store
+  3. Use a DescriptaStore to access properties
 
 Installing
 ==========
@@ -30,55 +37,12 @@ cd rdkit-descriptastorus
 python setup.py install
 ```
 
-Note:  scripts are not currently installed, they should be used from
-this directory.
+Requirements are in the setup.py file, but essentially:
 
-Make a MolFileIndex
-===================
+ 1. python2/3
+ 2. rdkit
+ 3. [optional but highly recommended] kyotocabinet
 
-If the smiles file has a header
-
-```
->>> from descriptastorus import MolFileIndex
->>> index = MolFileIndex.MakeSmilesIndex("data/test1.smi", "test1", hasHeader=True,
-...                                      smilesColumn="smiles", nameColumn="name")
->>> index.N
-13
->>> index.getMol(12)
-'c1ccccc1CCCCCCCCCCCC'
->>> index.getName(12)
-13
-```
-
-If the smiles file has no header
-
-```
->>> from descriptastorus import MolFileIndex
->>> index = MolFileIndex.MakeSmilesIndex("data/test2.smi", "test2", hasHeader=False,
-...                                      smilesColumn=1, nameColumn=0)
->>> index.N
-13
->>> index.getMol(12)
-'c1ccccc1CCCCCCCCCCCC'
->>> index.getName(12)
-13
-```
-
-Use a MolFileIndex
-==================
-
-Using a molfile index is fairly simple:
-
-```
->>> from descriptastorus import MolFileIndex
->>> idx = MolFileIndex("/db/cix/descriptastorus/test")
->>> idx.get(1000)
-['CC(C)(O)c1ccc(nc1)c4ccc3C=CN(Cc2ccc(F)cc2)c3c4', 'NVP-LEI449']
->>> idx.getName(1000)
-'NVP-LEI449'
->>> idx.getMol(1000)
-CC(C)(O)c1ccc(nc1)c4ccc3C=CN(Cc2ccc(F)cc2)c3c4'
-```
 
 Making a DescriptaStore
 =======================
@@ -193,7 +157,9 @@ for row in rows:
     ...
 ```
 
-# if indexed by inchikey
+# To lookup by inchikey
+
+```
 rows = []
 for key in inchiKeys:
     rows.extend( d.lookupInchiKey(key) )
@@ -252,6 +218,53 @@ Extract the column:
 ```
 >>> r.get(0)
 [45.223, 3]
+```
+
+Make a MolFileIndex
+===================
+
+If the smiles file has a header
+
+```
+>>> from descriptastorus import MolFileIndex
+>>> index = MolFileIndex.MakeSmilesIndex("data/test1.smi", "test1", hasHeader=True,
+...                                      smilesColumn="smiles", nameColumn="name")
+>>> index.N
+13
+>>> index.getMol(12)
+'c1ccccc1CCCCCCCCCCCC'
+>>> index.getName(12)
+13
+```
+
+If the smiles file has no header
+
+```
+>>> from descriptastorus import MolFileIndex
+>>> index = MolFileIndex.MakeSmilesIndex("data/test2.smi", "test2", hasHeader=False,
+...                                      smilesColumn=1, nameColumn=0)
+>>> index.N
+13
+>>> index.getMol(12)
+'c1ccccc1CCCCCCCCCCCC'
+>>> index.getName(12)
+13
+```
+
+Use a MolFileIndex
+==================
+
+Using a molfile index is fairly simple:
+
+```
+>>> from descriptastorus import MolFileIndex
+>>> idx = MolFileIndex("/db/cix/descriptastorus/test")
+>>> idx.get(1000)
+['CC(C)(O)c1ccc(nc1)c4ccc3C=CN(Cc2ccc(F)cc2)c3c4', 'NVP-LEI449']
+>>> idx.getName(1000)
+'NVP-LEI449'
+>>> idx.getMol(1000)
+CC(C)(O)c1ccc(nc1)c4ccc3C=CN(Cc2ccc(F)cc2)c3c4'
 ```
 
 Installation
