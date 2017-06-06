@@ -188,6 +188,9 @@ class DescriptaStore:
         """key -> returns the indicies of the inchi key"""
         if self.inchikey is None:
             raise ValueError("Inchi index not available")
-        res =  eval(self.inchikey[key])
+        strres = self.inchikey[key]
+        if strres is None:
+            raise KeyError(key)
+        res =  eval(strres)
         return res
     

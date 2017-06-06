@@ -52,6 +52,12 @@ class TestCase(unittest.TestCase):
                 self.assertEqual( store.lookupInchiKey("UHOVQNZJYSORNB-UHFFFAOYSA-N"), [0])
                 self.assertEqual(store.descriptors().get(0), (True, 78.046950192, 0.0, 1.0, 0.0, 1.0))
 
+            try:
+                store.lookupInchiKey("MY DOG HAS FLEAS")
+                self.assertTrue(False) # should not get here
+            except KeyError:
+                pass
+
         finally:
             if os.path.exists(fname):
                 os.unlink(fname)
