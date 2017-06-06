@@ -33,7 +33,7 @@ class MolFileIndex:
     """Index for a molecule file to provide random access to the internal molecules.
     """
     
-    def __init__(self, indexDirectory):
+    def __init__(self, indexDirectory, mode=raw.Mode.READONLY):
         """Fast random access to a smiles file by row index
         indexDirectory = directory of the molfile index
 
@@ -50,7 +50,7 @@ class MolFileIndex:
             raise IOError("Not a molfile index")
 
 
-        self.db = raw.RawStore(indexDirectory)
+        self.db = raw.RawStore(indexDirectory, mode=mode)
         self._nameGetter = None
         self.filename = options['filename']
         self.hasHeader = options['hasHeader']
@@ -123,6 +123,10 @@ class MolFileIndex:
                                      self.smilesColIdx,
                                      len(row),
                                      self.sep))
+
+    def __del__(self):
+        self.close()
+        
     def close(self):
         self.db.close()
         self.f.close()
@@ -165,7 +169,7 @@ class MolFileIndex:
                 name = v[self.nameidx]
                 return moldata, name
             return moldata
-	if self._nameGetter:
+        if self._nameGetter:
             return v, self._nameGetter(v)
         return v
     
@@ -223,9 +227,21 @@ def index(fname, word):
             else:
                 break
     
-def MakeSmilesIndex(filename, dbdir, hasHeader, smilesColumn, nameColumn=-1, sep=None):
+def MakeSmilesIndex(filename, dbdir, hasHeader, smilesColumn, nameColumn=-1, sep=None,
+                    reIndex=False):
     """Make smiles index -> index a smiles file for random access
-    n.b. Copies file over to index"""
+    filename: filename to index
+    dbdir: name of the index store
+    hasHeader: do we have a header
+    smilesColumn: column for the smiles string
+    nameColumn: column for the name string
+    sep: seperator for the file i.e. '\t'
+    reIndex: reIndex the existing file
+    otherwise Copies file over to index"""
+    targetFilename = os.path.join(dbdir, os.path.basename(filename))
+    if reIndex and os.path.abspath(filename) != os.path.abspath(targetFilename):
+        raise ValueError("If reindex is set, filename must be the storage filename (this is a sanity check\n%s\n%s"%(filename, targetFilename))
+    
     sz = os.path.getsize(filename)
     
     N = simplecount(filename)
@@ -239,11 +255,16 @@ def MakeSmilesIndex(filename, dbdir, hasHeader, smilesColumn, nameColumn=-1, sep
     else:
         dtype = numpy.uint64
 
-    db = raw.MakeStore([("index", dtype)], N+2, dbdir)
-    cpfile = os.path.join(dbdir, os.path.basename(filename))
-    print("Copying molecule file to index...", file=sys.stderr)
-    shutil.copy(filename, cpfile)
-    print("Done copying", file=sys.stderr)
+    db = raw.MakeStore([("index", dtype)], N+2, dbdir,
+                       checkDirectoryExists=(not reIndex))
+    cpfile = targetFilename
+    if not reIndex:
+        print("Copying molecule file to index...", file=sys.stderr)
+        shutil.copy(filename, cpfile)
+        print("Done copying", file=sys.stderr)
+    else:
+        print("Reindexing existing smiles file...", file=sys.stderr)
+        
     options = {'filename': os.path.basename(filename),
                'hasHeader': hasHeader,
                'smilesColumn': smilesColumn,

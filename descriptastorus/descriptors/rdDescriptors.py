@@ -3,7 +3,7 @@ This is a canned example for generating descriptors
 Please modify as necessary
 """
 from __future__ import print_function
-import rdkit_fixes
+from . import rdkit_fixes
 from rdkit import Chem
 from rdkit.Chem import Descriptors
 from rdkit.Chem import rdMolDescriptors as rd

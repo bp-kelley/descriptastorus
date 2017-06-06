@@ -28,7 +28,8 @@ except:
 class MakeStorageOptions:
     def __init__(self, storage, smilesfile, 
                  hasHeader, smilesColumn, nameColumn, seperator,
-                 descriptors, index_inchikey, batchsize=1000, numprocs=-1, verbose=False, **kw):
+                 descriptors, index_inchikey, batchsize=1000, numprocs=-1, verbose=False,
+                 **kw):
         self.storage = storage
         self.smilesfile = smilesfile
         self.smilesColumn = smilesColumn
@@ -64,7 +65,7 @@ def process( job ):
 
         return tuple(((index, result)
                       for (index,smiles), result in zip(job, results) if result))
-    except Exception, x:
+    except (Exception, x):
         import traceback
         traceback.print_exc()
 
@@ -94,7 +95,7 @@ def processInchi( job ):
                 res.append((index, result, inchi, key))
 
         return res
-    except Exception, x:
+    except (Exception, x):
         import traceback
         traceback.print_exc()
 
@@ -154,7 +155,7 @@ def make_store(options):
         raise IOError("Directory for descriptastorus already exists: %s"%options.storage)
     
     os.mkdir(options.storage)
-    with open(os.path.join(options.storage, "__options__"), 'w') as f:
+    with open(os.path.join(options.storage, "__options__"), 'wb') as f:
         pickle.dump(vars(options), f)
 
     # index the molfile

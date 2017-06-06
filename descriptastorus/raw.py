@@ -10,6 +10,7 @@ Data can be updated using putRow when opened in append mode.
 """
 from __future__ import print_function
 import pickle, numpy, os, mmap, struct, sys
+import logging
 
 # raw stores are little endian!
 
@@ -17,7 +18,8 @@ class Mode:
     READONLY = 0
     WRITE = 1
     APPEND = 2
-
+    READONCE = 3 # read through the file once...
+    
 class RawStoreIter:
     def __init__(self, raw):
         self.raw = raw
@@ -27,6 +29,12 @@ class RawStoreIter:
         if self.i >= self.raw.N:
             raise StopIteration()
         return self.raw.get(self.i)
+
+def convert_string( v ):
+    if type(v) == str:
+        return str.encode(v)
+    return v
+                
     
 class RawStore:
     def __init__(self, directory, mode=Mode.READONLY):
@@ -36,22 +44,36 @@ class RawStore:
         if not os.path.exists(directory):
             raise IOError("Directory %s for raw store does not exist"%
                           directory)
+        self.directory = directory
         with open(os.path.join(directory, "__rawformat__"), 'rb') as rawformat:
             self.__dict__.update(pickle.load(rawformat))
             
         fname = self.fname = os.path.join(directory, "__store___")
 
+        self._f = None
+        self.mode = mode
+        self._openfile()
+
+    def _openfile(self):
+        fname = self.fname
+        mode = self.mode
         if mode == Mode.APPEND:
-            self.f = open(fname, 'wb')
-        elif mode == Mode.READONLY:
+            self._f = open(fname, 'rb+')
+            access = None
+        if mode == Mode.READONLY:
             self._f = open(fname, 'rb')
-            access = mmap.ACCESS_READ
+            access = mmap.ACCESS_READ # shared by default
+        elif mode == Mode.READONCE:
+            self.f = open(fname, 'rb')
         else:
             self._f = open(fname, 'r+b')
             access = mmap.ACCESS_WRITE
-            
-        self.f = mmap.mmap(self._f.fileno(), 0, access=access)
 
+        if self._f is not None:
+            self.f = mmap.mmap(self._f.fileno(), 0, access=access)
+        else:
+            self.f = self._f
+        
     def close(self):
         self.f.close()
         self._f.close()
@@ -62,25 +84,55 @@ class RawStore:
     def __iter__(self):
         return RawStoreIter(self)
 
+    def appendBlankRows(self, M):
+        """Adds M blank rows to the store (must be opened in append mode)"""
+        if self.mode != Mode.APPEND:
+            raise IOError("Storage must be opened in append mode to add blank rows")
+        self.close()
+        _f = open(self.fname, 'rb+')        
+        if M < 1:
+            raise ValueError("The value of M must be positive, not %r"%M)
+        self.close()
+        
+        logging.error("Seeking to %s",  self.rowbytes * (self.N + M))
+        _f.seek(self.rowbytes * (self.N + M))
+        _f.write(b'\0')
+        self.N += M
+        _f.close()
+        logging.error("Filesize is %s", os.path.getsize(self.fname))
+        
+        opts = None
+        with open(os.path.join(self.directory, "__rawformat__"), 'rb') as rawformat:
+            opts = pickle.load(rawformat)
+        opts['N'] = self.N
+        with open(os.path.join(self.directory, "__rawformat__"), 'wb') as rawformat:
+            pickle.dump(opts, rawformat)
+        self._openfile()
+        
     def getDict(self, idx):
         """{colname:value, ...} Return the row at idx as a dictionary"""
         return {name:v for name, v in zip(self.colnames, self.get(idx))}
         
     def get(self, idx):
         """Return the row at idx"""
+        if idx >= self.N or idx < 0:
+            raise IndexError("Index out of range %s (0 < %s)",
+                             idx, self.N)
         offset = idx * self.rowbytes
         try:
             self.f.seek(offset,0)
         except ValueError:
-            print("Could not seek to index %d at offset %f offset"%(idx, offset), file=sys.stderr)
+            print("Could not seek to index %d at offset %f offset"%(
+                idx, offset), file=sys.stderr)
             raise IndexError("out or range %d"%idx)
-        bytes = self.f.read(self.rowbytes)
+        
+        _bytes = self.f.read(self.rowbytes)
+        res = struct.unpack(self.pack_format, _bytes)
         if "s" not in self.pack_format:
-            return struct.unpack(self.pack_format, bytes)
+            return res
         else:
-            return tuple([ x.replace("\x00","") if isinstance(x, str) else x
-                           for x in struct.unpack(self.pack_format, bytes) ])
-            
+            return tuple([ str(x).replace("\x00","")
+                           if isinstance(x, (str, bytes)) else x for x in res ])
 
     def getColByIdx(self, column):
         """Return the data in the entire column (lazy generator)"""
@@ -127,7 +179,7 @@ class RawStore:
         throws IndexError if the column doesn't exist."""
         idx = self.colnames.index(column_name)
         return self.getColByIdx(idx)
-        
+
     def putRow(self, idx, row):
         """Put data row in to row idx.
         Checks to see if the data in v is compatible with the column
@@ -147,19 +199,33 @@ class RawStore:
         offset = idx * self.rowbytes
         self.f.seek(offset,0)
         try:
-            bytes = struct.pack(self.pack_format, *row)
+            bytes = struct.pack(self.pack_format, *[convert_string(x) for x  in row])
         except struct.error:
             print("Can't write row %r"%(row), file=sys.stderr)
             raise
-        self.f.write(bytes)
+        try:
+            self.f.write(bytes)
+        except (Exception, e):
+            logging.error("Attempting to write to offset: %s", offset)
+            logging.error("Rowsize: %s", self.rowbytes)
+            logging.error("Row: %s", idx)
+            logging.error("Max Row: %s", self.N)
+            logging.error("Filesize is %s",
+                           os.path.getsize(self.fname))
+            raise
 
     def write(self, row):
         """Writes row with no datatype checking to the end of the file.
         Do not use with putRow/getRow
-        Rows must be written in the correct order"""
+        Rows must be written in the correct order
+        (strings datatypes are currently an issue)
+        """
         bytes = struct.pack(self.pack_format, *row)
         self.f.write(bytes)
 
+def str_store(s):
+    return str.encode(str(s))
+        
 def MakeStore(cols, N, directory, checkDirectoryExists=True):
     if not os.path.exists(directory):
         os.mkdir(directory)
@@ -209,7 +275,7 @@ def MakeStore(cols, N, directory, checkDirectoryExists=True):
             if dtype.type == numpy.string_:
                 size = dtype.itemsize
                 type = "%ss"%size
-                dtypes.append(str)
+                dtypes.append(str_store)
         else:
             raise ValueError("Unhandled numpy type %s"%dtype)
 
@@ -230,12 +296,12 @@ def MakeStore(cols, N, directory, checkDirectoryExists=True):
 
     # Make the storage
     fname = os.path.join(directory, "__store___")
-    f = open(fname, 'wb')
-    f.seek(rowbytes*N)
-    f.write(b'\0')
-    f.close()
+    with open(fname, 'wb') as f:
+        f.seek(rowbytes*N)
+        f.write(b'\0')
 
     # return the store
     return RawStore(directory, Mode.WRITE)
+    
     
     

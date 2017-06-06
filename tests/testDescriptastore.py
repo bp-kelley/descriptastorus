@@ -1,14 +1,16 @@
 from __future__ import print_function
 import unittest
 from rdkit.Chem import AllChem
-from descriptastorus import make_store, DescriptaStore
+from descriptastorus import append_store, make_store, DescriptaStore
 from descriptastorus.descriptors.rdDescriptors import RDKit2D
+from descriptastorus import descriptors
 
 import contextlib, tempfile, os, shutil, sys
 import datahook
 
 one_smiles = "c1ccccc1 0"
 many_smiles = "\n".join( [ "C"*i + "c1ccccc1 " + str(i) for i in range(10) ] + ["NOSTRUCT foo"] )
+many_smiles2 = "\n".join( [ "C"*i + "c1ccccc1 " + str(i+11) for i in range(10) ] + ["NOSTRUCT foo2"] )
 
 from rdkit.Chem import Descriptors
 
@@ -29,6 +31,10 @@ def toDict( v ):
                                v)}
 
 class TestCase(unittest.TestCase):
+    def testGenerator(self):
+        gen = descriptors.MakeGenerator(("RDKit2DSubset",))
+        self.assertTrue(gen!=None)
+        
     def testOffByOne(self):
         try:
             fname = tempfile.mktemp()+".smi"
@@ -201,3 +207,78 @@ class TestCase(unittest.TestCase):
             if os.path.exists(storefname):
                 shutil.rmtree(storefname)
                 
+    def testAppend(self):
+        try:
+            fname = tempfile.mktemp()+".smi"
+            storefname = tempfile.mktemp()+".store"
+            with open(fname, 'w') as f:
+                f.write(many_smiles)
+                
+            opts = make_store.MakeStorageOptions( storage=storefname, smilesfile=fname,
+                                                  hasHeader=False,
+                                                  smilesColumn=0, nameColumn=1,
+                                                  seperator=" ", descriptors="RDKit2DSubset",
+                                                  index_inchikey=True )
+            make_store.make_store(opts)
+
+            with contextlib.closing(DescriptaStore(storefname)) as store:
+
+                for i in range(10):
+                    self.assertEqual( store.lookupName(str(i)), i)
+
+                for i in range(10):
+                    m = store.molIndex().getRDMol(i)
+                    inchi = AllChem.InchiToInchiKey(AllChem.MolToInchi(m))
+                    self.assertEqual( store.lookupInchiKey(inchi), [i])
+                self.assertEqual(store.descriptors().get(0), (True, 78.046950192, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(1), (True, 92.062600256, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(2), (True, 106.07825032, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(3), (True, 120.093900384, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(4), (True, 134.109550448, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(5), (True, 148.125200512, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(6), (True, 162.140850576, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(7), (True, 176.15650064, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(8), (True, 190.172150704, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(9), (True, 204.187800768, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(10), (False, 0.0, 0.0, 0.0, 0.0, 0.0))                
+
+            fname = tempfile.mktemp()+".smi"
+            with open(fname, 'w') as f:
+                f.write(many_smiles2)
+                
+            opts.smilesfile = fname
+            append_store.append_store(opts)
+            with contextlib.closing(DescriptaStore(storefname)) as store:
+                for i in range(10):
+                    self.assertEqual( store.lookupName(str(i)), i)
+                    
+                for i in range(10):
+                    m = store.molIndex().getRDMol(i)
+                    inchi = AllChem.InchiToInchiKey(AllChem.MolToInchi(m))
+                    m = store.molIndex().getRDMol(i+11)
+                    self.assertTrue(m!=None)
+                    inchi2 = AllChem.InchiToInchiKey(AllChem.MolToInchi(m))
+                    self.assertEqual(inchi, inchi2)
+                    self.assertEqual( store.lookupInchiKey(inchi), [i, i+11])
+                    
+                for i in range(2):
+                    self.assertEqual(store.descriptors().get(11+0), (True, 78.046950192, 0.0, 1.0, 0.0, 1.0))
+                    self.assertEqual(store.descriptors().get(11+1), (True, 92.062600256, 0.0, 1.0, 0.0, 1.0))
+                    self.assertEqual(store.descriptors().get(11+2), (True, 106.07825032, 0.0, 1.0, 0.0, 1.0))
+                    self.assertEqual(store.descriptors().get(11+3), (True, 120.093900384, 0.0, 1.0, 0.0, 1.0))
+                    self.assertEqual(store.descriptors().get(11+4), (True, 134.109550448, 0.0, 1.0, 0.0, 1.0))
+                    self.assertEqual(store.descriptors().get(11+5), (True, 148.125200512, 0.0, 1.0, 0.0, 1.0))
+                    self.assertEqual(store.descriptors().get(11+6), (True, 162.140850576, 0.0, 1.0, 0.0, 1.0))
+                    self.assertEqual(store.descriptors().get(11+7), (True, 176.15650064, 0.0, 1.0, 0.0, 1.0))
+                    self.assertEqual(store.descriptors().get(11+8), (True, 190.172150704, 0.0, 1.0, 0.0, 1.0))
+                    self.assertEqual(store.descriptors().get(11+9), (True, 204.187800768, 0.0, 1.0, 0.0, 1.0))
+                    self.assertEqual(store.descriptors().get(11+10), (False, 0.0, 0.0, 0.0, 0.0, 0.0))                
+        
+        finally:
+            if os.path.exists(fname):
+                os.unlink(fname)
+            if os.path.exists(storefname):
+                shutil.rmtree(storefname)
+
+if __name__ == '__main__':  #pragma: no cover
+    unittest.main()
