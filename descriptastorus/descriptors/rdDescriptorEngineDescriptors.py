@@ -69,7 +69,7 @@ class DescriptorEngineDescriptors(DescriptorGenerator):
         return results
 try:    
     DescriptorEngineDescriptors()
-except Exception, e:
+except Exception as e:
     logging.warning("Unable to load descriptor engine descriptors: %s", str(e))
     
 MOKA_DESCRIPTORS = "moka:fractionIonized(pH=10.0),moka:fractionIonized(pH=4.0),"\
@@ -82,7 +82,7 @@ class DescriptorEngineMokaDescriptors(DescriptorEngineDescriptors):
 
 try:
     DescriptorEngineMokaDescriptors()
-except Exception, e:
+except Exception as e:
     logging.warning("Unable to load descriptor engine descriptors: %s", str(e))
         
 PSACALC_DESCRIPTORS="basic:psa"
@@ -93,7 +93,7 @@ class DescriptorEnginePSADescriptors(DescriptorEngineDescriptors):
 
 try:
     DescriptorEnginePSADescriptors()
-except Exception, e:
+except Exception as e:
     logging.warning("Unable to load descriptor engine descriptors: %s", str(e))
         
 MOLVOL_DESCRIPTORS="molvol:volume"
