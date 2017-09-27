@@ -13,4 +13,5 @@ __pycache__/
 
 #- Files created during build phase
 /build*/
+/dist*/
 
