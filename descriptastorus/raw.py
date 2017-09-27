@@ -195,7 +195,20 @@ class RawStore:
                     len(row), len(self.dtypes)))
 
         # checks row datatypes
-        v = [dtype(v) for dtype,v in zip(self.dtypes, row)]
+        try:
+            v = [dtype(v) for dtype,v in zip(self.dtypes, row)]
+        except TypeError as e:
+            # we might have None's here
+            message = [str(e)]
+            for i,(dtype,v) in enumerate(zip(self.dtypes, row)):
+                try: dtype(v)
+                except:
+                    message.append("\tFor column %r can't convert %r to %s"%(
+                        self.colnames[i],
+                        v,
+                        dtype))
+            raise TypeError("\n".join(message))
+        
         offset = idx * self.rowbytes
         self.f.seek(offset,0)
         try:
