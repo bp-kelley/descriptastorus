@@ -218,7 +218,7 @@ class RawStore:
             raise
         try:
             self.f.write(bytes)
-        except (Exception, e):
+        except Exception as e:
             logging.error("Attempting to write to offset: %s", offset)
             logging.error("Rowsize: %s", self.rowbytes)
             logging.error("Row: %s", idx)

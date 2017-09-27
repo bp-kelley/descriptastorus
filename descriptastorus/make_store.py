@@ -67,7 +67,7 @@ def process( job ):
 
         return tuple(((index, result)
                       for (index,smiles), result in zip(job, results) if result))
-    except (Exception, x):
+    except Exception as x:
         import traceback
         traceback.print_exc()
 
@@ -97,7 +97,7 @@ def processInchi( job ):
                 res.append((index, result, inchi, key))
 
         return res
-    except (Exception, x):
+    except Exception as x:
         import traceback
         traceback.print_exc()
 

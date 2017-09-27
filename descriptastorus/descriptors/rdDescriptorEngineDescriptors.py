@@ -6,15 +6,13 @@ from __future__ import print_function
 from rdkit import Chem
 from rdkit.Chem import Descriptors, MolFromSmiles, MolToSmiles
 from rdkit.Chem import rdMolDescriptors as rd
-try:
-    from rdkit.Avalon import pyAvalonTools
-except:
-    pass
+from rdkit.Avalon import pyAvalonTools
+
 
 import numpy,sys
 from .DescriptorGenerator import DescriptorGenerator
 import logging
-from rdkit.Novartis import DescriptorEngine
+from rdkit_Novartis import DescriptorEngine
 from rdkit import Chem
 from rdkit.Chem import Descriptors
 import rdkit_fixes
@@ -69,7 +67,7 @@ class DescriptorEngineDescriptors(DescriptorGenerator):
         return results
 try:    
     DescriptorEngineDescriptors()
-except Exception, e:
+except Exception as e:
     logging.warning("Unable to load descriptor engine descriptors: %s", str(e))
     
 MOKA_DESCRIPTORS = "moka:fractionIonized(pH=10.0),moka:fractionIonized(pH=4.0),"\
@@ -82,7 +80,7 @@ class DescriptorEngineMokaDescriptors(DescriptorEngineDescriptors):
 
 try:
     DescriptorEngineMokaDescriptors()
-except Exception, e:
+except Exception as e:
     logging.warning("Unable to load descriptor engine descriptors: %s", str(e))
         
 PSACALC_DESCRIPTORS="basic:psa"
@@ -93,7 +91,7 @@ class DescriptorEnginePSADescriptors(DescriptorEngineDescriptors):
 
 try:
     DescriptorEnginePSADescriptors()
-except Exception, e:
+except Exception as e:
     logging.warning("Unable to load descriptor engine descriptors: %s", str(e))
         
 MOLVOL_DESCRIPTORS="molvol:volume"
@@ -105,5 +103,5 @@ class DescriptorEngineMolVolDescriptors(DescriptorEngineDescriptors):
 
 try:
     DescriptorEngineMolVolDescriptors()
-except Exception, e:
+except Exception as e:
     logging.warning("Unable to load descriptor engine descriptors: %s", str(e))
