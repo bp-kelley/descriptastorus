@@ -69,8 +69,10 @@ class TestCase(unittest.TestCase):
 
     def testDescriptorWithNones(self):
         res = descriptors.processMol(None, "", False)
+        self.assertEqual(res, [False, 0, 0, 0.0, 0.0])
         self.assertFalse(res[0])
         self.assertFalse(None in res)
+        
         
     def testNonesWithCalcFlags(self):
         try:
