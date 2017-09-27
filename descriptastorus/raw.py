@@ -214,7 +214,10 @@ class RawStore:
         try:
             bytes = struct.pack(self.pack_format, *[convert_string(x) for x  in row])
         except struct.error:
-            print("Can't write row %r"%(row), file=sys.stderr)
+            logging.exception("Can't write row %r\ntypes: %r\nformat: %r",
+                              row,
+                              self.dtypes,
+                              self.pack_format)
             raise
         try:
             self.f.write(bytes)
