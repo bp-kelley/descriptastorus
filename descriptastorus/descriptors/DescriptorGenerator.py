@@ -1,7 +1,6 @@
 from __future__ import print_function
 from rdkit import Chem
 import logging, numpy, sys
-import math
 
 class DescriptorGenerator:
     REGISTRY = {}
@@ -63,11 +62,13 @@ class DescriptorGenerator:
                                       self.NAME,
                                       columns[idx+1][0],
                                       smiles)
+                        res[idx] = columns[idx+1][1]() # default value here
                     else:
                         logging.error("At least one result: %s failed: %s",
                                       columns[idx][0],
                                       smiles)
-                res[idx] = columns[idx][1]() # default value here
+                        res[idx] = columns[idx][1]() # default value here
+
             logging.info("res %r", res)
             res.insert(0, False)
         else:
