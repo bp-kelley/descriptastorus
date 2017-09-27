@@ -41,6 +41,8 @@ class MakeStorageOptions:
         self.batchsize = int(batchsize)
         self.numprocs = numprocs
         self.verbose = verbose
+        if (kw):
+            logging.warning("%s: ignoring extra keywords: %r", self.__class__.__name__, kw)
 
 # ugly multiprocessing nonesense
 #  this makes this really not threadsafe
