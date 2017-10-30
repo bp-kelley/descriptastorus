@@ -186,7 +186,7 @@ Example:
  >>> from descriptastorus import raw
  >>> import numpy
  >>> columns = [('exactmw', numpy.float64), ('numRotatableBonds', numpy.int32) ...]
- >>> r = raw.MakeRawStore( columns, 2, "magma")
+ >>> r = raw.MakeStore( columns, 2, "magma")
  >>> r.putRow(0, [45.223, 3])
 ```
 

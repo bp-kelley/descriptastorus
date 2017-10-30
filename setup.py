@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name='descriptastorus',
-      version='1.1.0',
+      version='1.1.1',
       description='Descriptor storage and molecular file indexing',
       author='Brian Kelley',
       author_email='brian.kelley@novartis.com',
