@@ -3,14 +3,16 @@ import sys, unittest
 from descriptastorus import raw
 import logging, os, shutil, numpy, random, time
 
-class TestCast(unittest.TestCase):
+class TestRawStore(unittest.TestCase):
     directory = "mydir4"
     
     def startUp(self):
         if os.path.exists(self.directory):
+            logging.info("startup: Removing directory")
             shutil.rmtree(self.directory)
     def tearDown(self):
         if os.path.exists(self.directory):
+            logging.info("tear down: Removing directory")
             shutil.rmtree(self.directory)
 
     def testStore(self):

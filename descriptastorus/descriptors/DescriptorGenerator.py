@@ -46,9 +46,33 @@ class DescriptorGenerator:
         """
         if not internalParsing:
             m = self.molFromMol(m)
-            
-        res = [True]
-        res.extend(self.calculateMol(m, smiles, internalParsing))
+
+        # If None's are returned from calculations
+        #  mark the row as failed and replace None's with default values
+        #  for storage.
+        res = self.calculateMol(m, smiles, internalParsing)
+        if None in res:
+            logging.error("None in res")
+            columns = self.GetColumns()
+
+            for idx,v in enumerate(res):
+                if v is None:
+                    if self.NAME:
+                        logging.error("At least one result: %s(%s) failed: %s",
+                                      self.NAME,
+                                      columns[idx+1][0],
+                                      smiles)
+                        res[idx] = columns[idx+1][1]() # default value here
+                    else:
+                        logging.error("At least one result: %s failed: %s",
+                                      columns[idx][0],
+                                      smiles)
+                        res[idx] = columns[idx][1]() # default value here
+
+            logging.info("res %r", res)
+            res.insert(0, False)
+        else:
+            res.insert(0, True)
         return res
     
     def processMols(self, mols, smiles, internalParsing=False):
@@ -59,11 +83,10 @@ class DescriptorGenerator:
 
         if internalParsing is False, takes the molecules as-is.  Otherwise
         the molecule was prepared by the DescriptorGenerator by calling the appropriate
-        translation function (i.e. molFromSmiels) (i.e. consistently
+        translation function (i.e. molFromSmiles) (e.g. used for consistently
         ordering input for MoKa descriptors)  
 
-        Calling this directly requires the User
-        to properly prepare the molecules if necessary
+        Calling this directly requires the User to properly prepare the molecules if necessary
         """
         if len(mols) != len(smiles):
             raise ValueError("Number of molecules does not match number of unparsed molecules")

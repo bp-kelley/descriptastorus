@@ -99,7 +99,7 @@ def applyFunc(name, m):
         logging.exception("function application failed (%s->%s)",
             name, Chem.MolToSmiles(m))
                        
-        return 0.0
+        return None
 
 class RDKit2D(DescriptorGenerator):
     """Computes all RDKit Descriptors"""
