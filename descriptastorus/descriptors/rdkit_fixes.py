@@ -7,7 +7,7 @@ if not hasattr(Descriptors, "qed"):
     # fix missing internal descriptors
     from .QED import qed
     def _FingerprintDensity(mol,func,*args,**kwargs):
-        fp = func(*((mol,)+args),**kwargs)
+        fp = func(mol, *args, **kwargs)
         if hasattr(fp,'GetNumOnBits'):
             val = fp.GetNumOnBits()
         else:
