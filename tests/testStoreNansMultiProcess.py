@@ -10,8 +10,8 @@ import datahook
 one_smiles = "c1ccccc1 0"
 many_smiles = "\n".join( [ "C"*i + "c1ccccc1 " + str(i) for i in range(10) ] )
 
-class NanDescriptors(DescriptorGenerator):
-    NAME="NANDescriptors"
+class NanDescriptors_MS(DescriptorGenerator):
+    NAME="NANDescriptors_MS"
     def GetColumns(self):
         return [('a', numpy.float32),
                 ('b', numpy.float32),
@@ -20,7 +20,7 @@ class NanDescriptors(DescriptorGenerator):
     
     def processMol(self, m, smiles, internalParsing=False):
         return [float('nan')]*4
-NanDescriptors()
+NanDescriptors_MS()
 
 class TestCase(unittest.TestCase):
     def testNans(self):
@@ -35,7 +35,7 @@ class TestCase(unittest.TestCase):
             opts = make_store.MakeStorageOptions( storage=storefname, smilesfile=fname,
                                                   hasHeader=False,
                                                   smilesColumn=0, nameColumn=1,
-                                                  seperator=" ", descriptors="NANDescriptors",
+                                                  seperator=" ", descriptors="NANDescriptors_MS",
                                                   index_inchikey=True )
             make_store.make_store(opts)
 
