@@ -4,7 +4,7 @@ from .rdDescriptors import *
 try:
     from .rdDescriptorEngineDescriptors import *
 except:
-    logging.exception("Could not load DescriptorEngine descriptors ... skipping")
+    logging.warning("Could not load DescriptorEngine descriptors ... skipping")
     
 
         
