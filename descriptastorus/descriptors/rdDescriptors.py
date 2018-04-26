@@ -62,12 +62,13 @@ class ChiralMorganCounts(DescriptorGenerator):
         # specify names and numpy types for all columns
         self.radius = radius
         self.nbits = nbits
+        self.useChirality = useChirality
         morgan = [("m3-%d"%d, numpy.uint8) for d in range(nbits)]
         self.columns += morgan
 
     def calculateMol(self, m, smiles, internalParsing=False):
         counts = list(rd.GetHashedMorganFingerprint(m,
-                                                    radius=self.radius, nBits=self.nbits))
+                                                    radius=self.radius, nBits=self.nbits,useChirality=self.useChirality))
         counts = [ clip(x,smiles) for x in counts ]
         return counts        
 
