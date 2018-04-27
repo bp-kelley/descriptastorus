@@ -52,11 +52,11 @@ class ChiralMorganCounts(DescriptorGenerator):
             self.NAME = self.NAME % "Chiral3"
         else:
             if useChirality is True:
-                useChrial_string = 'chiral'
+                useChiral_string = 'chiral'
             else:
-                useChrial_string = ''
+                useChiral_string = ''
                 # no mention means nonchiral morgans
-            self.NAME = self.NAME % ("%s%s-%s"%useChrial_string,radius,nbits)
+            self.NAME = self.NAME % ("%s%s-%s"%useChiral_string,radius,nbits)
             
         DescriptorGenerator.__init__(self)
         # specify names and numpy types for all columns
@@ -72,7 +72,7 @@ class ChiralMorganCounts(DescriptorGenerator):
         counts = [ clip(x,smiles) for x in counts ]
         return counts        
 
-MorganCounts()
+ChiralMorganCounts()
 
 
 
