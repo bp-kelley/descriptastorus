@@ -183,7 +183,10 @@ def MakeGenerator( generator_names ):
             d = DescriptorGenerator.REGISTRY[name.lower()]
             generators.append(d)
         except:
-            logging.exception("No DescriptorGenerator found named %s", name)
+            logging.exception("No DescriptorGenerator found named %s\nCurrently registered descriptors:\n\t%s",
+                              name,
+                              "\n\t".join(sorted(DescriptorGenerator.REGISTRY.keys()))
+            )
             raise
     if len(generators) > 1:
         return Container(generators)
