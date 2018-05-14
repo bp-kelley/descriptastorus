@@ -44,6 +44,37 @@ class MorganCounts(DescriptorGenerator):
 
 MorganCounts()
 
+class ChiralMorganCounts(DescriptorGenerator):
+    """Computes Morgan3 bitvector counts"""
+    NAME = "Morgan%sCounts"
+    def __init__(self, radius=3, nbits=2048, useChirality=True):
+        if radius == 3 and nbits == 2048 and (useChirality is True):
+            self.NAME = self.NAME % "Chiral3"
+        else:
+            if useChirality is True:
+                useChiral_string = 'chiral'
+            else:
+                useChiral_string = ''
+                # no mention means nonchiral morgans
+            self.NAME = self.NAME % ("%s%s-%s"%useChiral_string,radius,nbits)
+            
+        DescriptorGenerator.__init__(self)
+        # specify names and numpy types for all columns
+        self.radius = radius
+        self.nbits = nbits
+        self.useChirality = useChirality
+        morgan = [("m3-%d"%d, numpy.uint8) for d in range(nbits)]
+        self.columns += morgan
+
+    def calculateMol(self, m, smiles, internalParsing=False):
+        counts = list(rd.GetHashedMorganFingerprint(m,
+                                                    radius=self.radius, nBits=self.nbits,useChirality=self.useChirality))
+        counts = [ clip(x,smiles) for x in counts ]
+        return counts        
+
+ChiralMorganCounts()
+
+
 
 RDKIT_PROPS = {"1.0.0": ['BalabanJ', 'BertzCT', 'Chi0', 'Chi0n', 'Chi0v', 'Chi1', 'Chi1n',
                          'Chi1v', 'Chi2n', 'Chi2v', 'Chi3n', 'Chi3v', 'Chi4n', 'Chi4v',
