@@ -12,8 +12,8 @@ parser.add_argument("smilesfile",
 parser.add_argument("storage",
                     help="directory in which to store the descriptors")
 
-parser.add_argument("--append", action="store_true",
-                    help="Append new compounds to the smiles file (rejecting compounds with the same name)")
+#parser.add_argument("--append", action="store_true",
+#                    help="Append new compounds to the smiles file (rejecting compounds with the same name)")
 
 parser.add_argument("--descriptors", default="Morgan3Counts,RDKit2D")
 parser.add_argument("--hasHeader", action="store_true",
