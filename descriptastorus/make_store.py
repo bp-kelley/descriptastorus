@@ -199,6 +199,7 @@ def make_store(options):
 
         done = False
         count = 0
+        numOutput = 0
         batchsize = options.batchsize
         badColumnWarning = False
         inchies = {}
@@ -221,11 +222,12 @@ def make_store(options):
             else:
                 results = pool.map(process, joblist)
 
-                
+
             procTime = time.time() - t1
             
             for result in results:
-                if not badColumnWarning and len(result) == 0:
+                numOutput += len(result)
+                if numOutput == 0 and not badColumnWarning and len(result) == 0:
                     badColumnWarning = True
                     logging.warning("no molecules processed in batch, check the smilesColumn")
                     logging.warning("First 10 smiles:\n")
