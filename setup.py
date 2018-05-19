@@ -33,5 +33,12 @@ setup(name='descriptastorus',
       test_suite='nose.collector',
       tests_require=['nose'],
       include_package_data=True,
+      entry_points={
+          'console_scripts': [
+              'storus = descriptastorus.cli.storus:main',
+              'storus-validate = descriptastorus.cli.validate:main',
+              ]
+          },
+                                                            
       packages = find_packages())
 
