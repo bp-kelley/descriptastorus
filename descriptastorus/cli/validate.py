@@ -37,7 +37,7 @@ def main():
             print("Validated %2.2f%%"%(next*100))
             next += .05
         if randomize:
-            idx = random.randint(0,N)
+            idx = random.randint(0,N-1)
         else:
             idx = i
         
@@ -52,7 +52,6 @@ def main():
         res = gen.process(smiles)
         if res is None:
             assert v == tuple([0]*len(v))
-            assert smiles == "NOSTRUCT"
             continue
         
         data = []
