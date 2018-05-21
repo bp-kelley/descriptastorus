@@ -46,7 +46,7 @@ MorganCounts()
 
 class ChiralMorganCounts(DescriptorGenerator):
     """Computes Morgan3 bitvector counts"""
-    NAME = "Morgan%sCounts"
+    NAME = "ChiralMorgan%sCounts"
     def __init__(self, radius=3, nbits=2048, useChirality=True):
         if radius == 3 and nbits == 2048 and (useChirality is True):
             self.NAME = self.NAME % "Chiral3"
