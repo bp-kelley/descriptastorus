@@ -81,7 +81,6 @@ def append_store(options):
     if not os.path.exists(options.storage):
         raise IOError("Directory for descriptastorus does not exist: %s"%options.storage)
     
-
     with open(os.path.join(options.storage, "__options__"), "rb") as f:
         storageOptions = pickle.load(f)
     dbdir = options.storage
@@ -92,7 +91,7 @@ def append_store(options):
     if d.inchikey and not kyotocabinet:
         logging.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet")
         return False
-    
+
     d.close()
     # checks basic compatibility (only smiles column and name and seperator)
     check(storageOptions, options, "smilesColumn")
@@ -113,6 +112,13 @@ def append_store(options):
                        dest=orig_filename,
                        hasHeader=options.hasHeader)
                 
+    if options.numprocs == -1:
+        num_cpus = multiprocessing.cpu_count()
+    else:
+        # never use more than the maximum number
+        num_cpus = min(int(options.numprocs), multiprocessing.cpu_count())
+            
+    pool = multiprocessing.Pool(num_cpus)
         
     sm = MolFileIndex.MakeSmilesIndex(orig_filename, indexdir,
                                       sep=options.seperator,
@@ -124,7 +130,7 @@ def append_store(options):
     smN = sm.N
     sm.close()
     sm = None
-
+    
     d = DescriptaStore(dbdir, mode=Mode.APPEND)
     assert d.index.N == smN
     print("Appending descriptors for molecules %s to %s..."%(
@@ -146,13 +152,6 @@ def append_store(options):
         if d.name:
             name_cabinet = d.name
 
-        if options.numprocs == -1:
-            num_cpus = multiprocessing.cpu_count()
-        else:
-            # never use more than the maximum number
-            options.numprocs = min(int(options.numprocs), multiprocessing.cpu_count())
-            
-        pool = multiprocessing.Pool(num_cpus)
         print ("Number of molecules to process", numstructs)
 
         done = False
@@ -242,3 +241,4 @@ def append_store(options):
             logging.info("... indexed in %2.2f seconds", (time.time()-t1))
     finally:
         d.close()
+        pool.close()
