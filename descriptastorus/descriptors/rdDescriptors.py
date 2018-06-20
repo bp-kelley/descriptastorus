@@ -46,29 +46,23 @@ MorganCounts()
 
 class ChiralMorganCounts(DescriptorGenerator):
     """Computes Morgan3 bitvector counts"""
-    NAME = "ChiralMorgan%sCounts"
-    def __init__(self, radius=3, nbits=2048, useChirality=True):
-        if radius == 3 and nbits == 2048 and (useChirality is True):
+    NAME = "Morgan%sCounts"
+    def __init__(self, radius=3, nbits=2048):
+        if radius == 3 and nbits == 2048:
             self.NAME = self.NAME % "Chiral3"
         else:
-            if useChirality is True:
-                useChiral_string = 'chiral'
-            else:
-                useChiral_string = ''
-                # no mention means nonchiral morgans
-            self.NAME = self.NAME % ("%s%s-%s"%useChiral_string,radius,nbits)
+            self.NAME = self.NAME % ("%s-%s"%radius,nbits)
             
         DescriptorGenerator.__init__(self)
         # specify names and numpy types for all columns
         self.radius = radius
         self.nbits = nbits
-        self.useChirality = useChirality
         morgan = [("m3-%d"%d, numpy.uint8) for d in range(nbits)]
         self.columns += morgan
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = list(rd.GetHashedMorganFingerprint(m,
-                                                    radius=self.radius, nBits=self.nbits,useChirality=self.useChirality))
+        counts = list(rd.GetHashedMorganFingerprint(
+            m, radius=self.radius, nBits=self.nbits, useChirality=True))
         counts = [ clip(x,smiles) for x in counts ]
         return counts        
 
