@@ -155,7 +155,16 @@ def make_store(options):
     # make the storage directory
     if os.path.exists(options.storage):
         raise IOError("Directory for descriptastorus already exists: %s"%options.storage)
-    
+
+    # prepare the Pool
+    if options.numprocs == -1:
+        num_cpus = multiprocessing.cpu_count()
+    else:
+        # never use more than the maximum number
+        num_cpus = min(int(options.numprocs), multiprocessing.cpu_count())
+            
+    pool = multiprocessing.Pool(num_cpus)
+
     os.mkdir(options.storage)
     with open(os.path.join(options.storage, "__options__"), 'wb') as f:
         pickle.dump(vars(options), f)
@@ -168,7 +177,7 @@ def make_store(options):
                                       hasHeader = options.hasHeader,
                                       smilesColumn = options.smilesColumn,
                                       nameColumn = options.nameColumn)
-    print("Creating descriptors for %s molecules..."%sm.N)
+    logging.info("Creating descriptors for %s molecules...", sm.N)
 
                                       
     numstructs = sm.N
@@ -188,15 +197,8 @@ def make_store(options):
             name_cabinet.open(name, kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)
 
 
-        if options.numprocs == -1:
-            num_cpus = multiprocessing.cpu_count()
-        else:
-            # never use more than the maximum number
-            options.numprocs = min(int(options.numprocs), multiprocessing.cpu_count())
-            
-        pool = multiprocessing.Pool(num_cpus)
-        print ("Number of molecules to process", numstructs)
-
+        logging.info("Number of molecules to process: %s", numstructs)
+        
         done = False
         count = 0
         numOutput = 0
@@ -281,3 +283,4 @@ def make_store(options):
     finally:
         sm.close()
         s.close()
+        pool.close()
