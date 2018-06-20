@@ -3,7 +3,7 @@ from rdkit.Chem import AllChem
 
 import os, numpy, sys
 from . import raw
-import shutil, pickle
+import logging, shutil, pickle
 
 def SDFNameGetter(buffer):
     return buffer.split("\n")[0].strip()
@@ -259,11 +259,11 @@ def MakeSmilesIndex(filename, dbdir, hasHeader, smilesColumn, nameColumn=-1, sep
                        checkDirectoryExists=(not reIndex))
     cpfile = targetFilename
     if not reIndex:
-        print("Copying molecule file to index...", file=sys.stderr)
+        logging.info("Copying molecule file to index...")
         shutil.copy(filename, cpfile)
-        print("Done copying", file=sys.stderr)
+        logging.info("Done copying")
     else:
-        print("Reindexing existing smiles file...", file=sys.stderr)
+        logging.info("Reindexing existing smiles file...")
         
     options = {'filename': os.path.basename(filename),
                'hasHeader': hasHeader,
@@ -280,7 +280,7 @@ def MakeSmilesIndex(filename, dbdir, hasHeader, smilesColumn, nameColumn=-1, sep
     
     # first row
     #  TODO sniff newline...
-    print("Indexing...", file=sys.stderr)
+    logging.info("Indexing...")
     db.putRow(0, [0])
     for i,pos in enumerate(index(cpfile, b"\n")):
         db.putRow(i+1, [pos+1])

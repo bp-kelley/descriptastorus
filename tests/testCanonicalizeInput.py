@@ -32,8 +32,6 @@ class TestCase(unittest.TestCase):
         try:
             fname = tempfile.mktemp()+".smi"
             storefname = tempfile.mktemp()+".store"
-            print("\n\nfilename:", fname, file=sys.stderr)
-            print("storefilename:", storefname, file=sys.stderr)
             with open(fname, 'w') as f:
                 f.write(many_smiles)
                 
@@ -50,7 +48,7 @@ class TestCase(unittest.TestCase):
                     r = store.descriptors().get(i)
                     counts.append(r[0])
                 counts.sort()
-                self.assertEquals(counts, list(range(8,18)))
+                self.assertEqual(counts, list(range(8,18)))
 
 
                 
@@ -64,8 +62,6 @@ class TestCase(unittest.TestCase):
         try:
             fname = tempfile.mktemp()+".smi"
             storefname = tempfile.mktemp()+".store"
-            print("\n\nfilename:", fname, file=sys.stderr)
-            print("storefilename:", storefname, file=sys.stderr)
             with open(fname, 'w') as f:
                 f.write(many_smiles)
                 
@@ -82,7 +78,7 @@ class TestCase(unittest.TestCase):
                     r = store.descriptors().get(i)
                     counts.append(r[0])
                 counts.sort()
-                self.assertEquals(counts, list(range(8,18)))
+                self.assertEqual(counts, list(range(8,18)))
                 
         finally:
             if os.path.exists(fname):

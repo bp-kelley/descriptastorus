@@ -16,8 +16,6 @@ class TestCase(unittest.TestCase):
         try:
             fname = tempfile.mktemp()+".smi"
             storefname = tempfile.mktemp()+".store"
-            print("\n\nfilename:", fname, file=sys.stderr),
-            print("storefilename:", storefname, file=sys.stderr),
             with open(fname, 'w') as f:
                 f.write(many_smiles),
                 
@@ -44,8 +42,6 @@ class TestCase(unittest.TestCase):
         try:
             fname = tempfile.mktemp()+".smi"
             storefname = tempfile.mktemp()+".store"
-            print("\n\nfilename:", fname, file=sys.stderr)
-            print("storefilename:", storefname, file=sys.stderr)
             with open(fname, 'w') as f:
                 f.write(many_smiles)
                 
