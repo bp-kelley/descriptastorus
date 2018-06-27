@@ -1,5 +1,5 @@
 from __future__ import print_function
-from descriptastorus import make_store
+from descriptastorus import append_store, make_store
 import argparse, logging, os, shutil, time
 
 import sys
