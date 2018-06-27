@@ -189,12 +189,16 @@ def make_store(options):
             cabinet = kyotocabinet.DB()
             inchi = os.path.join(options.storage, "inchikey.kch")
             cabinet.open(inchi, kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)
+        else:
+            logging.warning("Not logging inchi (see --index-inchkey)")
 
         if options.nameColumn is not None:
             logging.info("Creating name store")
             name_cabinet = kyotocabinet.DB()
             name = os.path.join(options.storage, "name.kch")
             name_cabinet.open(name, kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)
+        else:
+            logging.warning("Not storing name lookup (see --nameColumn)")
 
 
         logging.info("Number of molecules to process: %s", numstructs)
