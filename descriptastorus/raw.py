@@ -94,12 +94,12 @@ class RawStore:
             raise ValueError("The value of M must be positive, not %r"%M)
         self.close()
         
-        logging.error("Seeking to %s",  self.rowbytes * (self.N + M))
+        logging.info("Seeking to %s",  self.rowbytes * (self.N + M))
         _f.seek(self.rowbytes * (self.N + M))
         _f.write(b'\0')
         self.N += M
         _f.close()
-        logging.error("Filesize is %s", os.path.getsize(self.fname))
+        logging.info("Filesize is %s", os.path.getsize(self.fname))
         
         opts = None
         with open(os.path.join(self.directory, "__rawformat__"), 'rb') as rawformat:

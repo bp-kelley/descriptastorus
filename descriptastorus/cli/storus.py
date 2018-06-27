@@ -47,7 +47,9 @@ def main():
     if opts.verbose:
         logging.getLogger().setLevel(logging.INFO)
 
-    if opts.append:
-        make_store.make_store(make_store.MakeStorageOptions(**vars(opts)))
+    if not opts.append:
+        d = vars(opts)
+        del d['append']
+        make_store.make_store(make_store.MakeStorageOptions(**d))
     else:
         append_store.append_store(append_store.AppendStorageOptions(**vars(opts)))
