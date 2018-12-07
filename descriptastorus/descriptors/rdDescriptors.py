@@ -53,7 +53,7 @@ class MorganCounts(DescriptorGenerator):
         if radius == 3 and nbits == 2048:
             self.NAME = self.NAME % "3"
         else:
-            self.NAME = self.NAME % ("%s-%s"%radius,nbits)
+            self.NAME = (self.NAME%radius)+"-%s"%nbits
             
         DescriptorGenerator.__init__(self)
         # specify names and numpy types for all columns
@@ -77,13 +77,13 @@ class ChiralMorganCounts(DescriptorGenerator):
         if radius == 3 and nbits == 2048:
             self.NAME = self.NAME % "Chiral3"
         else:
-            self.NAME = self.NAME % ("%s-%s"%radius,nbits)
+            self.NAME = (self.NAME%("Chiral%s"%radius))+"-%s"%nbits
             
         DescriptorGenerator.__init__(self)
         # specify names and numpy types for all columns
         self.radius = radius
         self.nbits = nbits
-        morgan = [("m3-%d"%d, numpy.uint8) for d in range(nbits)]
+        morgan = [("cm3-%d"%d, numpy.uint8) for d in range(nbits)]
         self.columns += morgan
 
     def calculateMol(self, m, smiles, internalParsing=False):
@@ -93,6 +93,78 @@ class ChiralMorganCounts(DescriptorGenerator):
         return counts        
 
 ChiralMorganCounts()
+
+
+class FeatureMorganCounts(DescriptorGenerator):
+    """Computes Morgan3 bitvector counts"""
+    NAME = "Morgan%sCounts"
+    def __init__(self, radius=3, nbits=2048):
+        if radius == 3 and nbits == 2048:
+            self.NAME = self.NAME % "Feature3"
+        else:
+            self.NAME = (self.NAME%("Feature%s"%radius))+"-%s"%nbits
+            
+        DescriptorGenerator.__init__(self)
+        # specify names and numpy types for all columns
+        self.radius = radius
+        self.nbits = nbits
+        morgan = [("fm3-%d"%d, numpy.uint8) for d in range(nbits)]
+        self.columns += morgan
+
+    def calculateMol(self, m, smiles, internalParsing=False):
+        counts = list(rd.GetHashedMorganFingerprint(
+            m, radius=self.radius, nBits=self.nbits, invariants=rd.GetFeatureInvariants(m)))
+        counts = [ clip(x,smiles) for x in counts ]
+        return counts        
+
+FeatureMorganCounts()
+
+
+class AtomPairCounts(DescriptorGenerator):
+    """Computes AtomPairs bitvector counts"""
+    NAME = "AtomPairCounts"
+    def __init__(self, minPathLen=1, maxPathLen=30, nbits=2048):
+        if minPathLen != 1 or maxPathLen != 30 or nbits != 2048:
+            self.NAME = self.NAME + ("%s-%s-%s"%(minPathLen,maxPathLen,nbits))
+            
+        DescriptorGenerator.__init__(self)
+        # specify names and numpy types for all columns
+        self.minPathLen = minPathLen
+        self.maxPathLen = maxPathLen
+        self.nbits = nbits
+        ap = [("AP-%d"%d, numpy.uint8) for d in range(nbits)]
+        self.columns += ap
+
+    def calculateMol(self, m, smiles, internalParsing=False):
+        counts = list(rd.GetHashedAtomPairFingerprint(m, minLength=self.minPathLen, 
+                                                      maxLength=self.maxPathLen, nBits=self.nbits))
+        counts = [ clip(x,smiles) for x in counts ]
+        return counts        
+
+AtomPairCounts()
+
+class RDKitFPBits(DescriptorGenerator):
+    """Computes RDKitFp bitvector"""
+    NAME = "RDKitFPBits"
+    def __init__(self, minPathLen=1, maxPathLen=7, nbits=2048):
+        if minPathLen != 1 or maxPathLen != 7 or nbits != 2048:
+          self.NAME = self.NAME + ("%s-%s-%s"%(minPathLen,maxPathLen,nbits))
+            
+        DescriptorGenerator.__init__(self)
+        # specify names and numpy types for all columns
+        self.minPathLen = minPathLen
+        self.maxPathLen = maxPathLen
+        self.nbits = nbits
+        ap = [("RDKFP-%d"%d, numpy.uint8) for d in range(nbits)]
+        self.columns += ap
+
+    def calculateMol(self, m, smiles, internalParsing=False):
+        counts = list(Chem.RDKFingerprint(m, minPath=self.minPathLen, 
+                                          maxPath=self.maxPathLen, fpSize=self.nbits))
+        counts = [ clip(x,smiles) for x in counts ]
+        return counts        
+
+RDKitFPBits()
 
 
 
