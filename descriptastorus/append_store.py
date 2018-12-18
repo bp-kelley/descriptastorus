@@ -252,11 +252,11 @@ def append_store(options):
             t1 = time.time()
             for k in sorted(inchies):
                 if k in cabinet or str.encode(k) in cabinet:
-                    l1 = eval(cabinet[k])
+                    l1 = cabinet.get(k)
                     l = l1 + inchies[k]
-                    cabinet[k] = repr(l)
+                    cabinet.set(k, l)
                 else:
-                    cabinet[k] = repr(inchies[k])
+                    cabinet.set(k, inchies[k])
             logging.info("... indexed in %2.2f seconds", (time.time()-t1))
             
         if names:
@@ -267,7 +267,7 @@ def append_store(options):
                                   " keeping idx %s (duplicate idx is %s)",
                                   name, name_cabinet[name], names[name])
                 else:
-                    name_cabinet[name] = names[name]
+                    name_cabinet.set(name, names[name])
             logging.info("... indexed in %2.2f seconds", (time.time()-t1))
     finally:
         d.close()

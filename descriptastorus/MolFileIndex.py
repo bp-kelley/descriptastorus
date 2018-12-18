@@ -49,15 +49,17 @@ class MolFileIter:
         self.raw = raw
         print("Length:", len(self.raw))
         self.i = -1
-    def next(self):
+        
+    def __next__(self):
         self.i += 1
         try:
-
             if self.i >= len(self.raw):
                 raise StopIteration()
             return self.raw.get(self.i)
         except IndexError:
             raise StopIteration()
+
+    def next(self): return self.__next__()
 
 class MolFileIndex:
     """Index for a molecule file to provide random access to the internal molecules.

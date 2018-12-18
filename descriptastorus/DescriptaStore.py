@@ -31,7 +31,10 @@
 from __future__ import print_function
 from . import raw
 from . import MolFileIndex
+from . import keyvalue
 import os, sys, contextlib, pickle
+from .keyvalue import KeyValueAPI
+
 import logging
 
 try:
@@ -39,11 +42,6 @@ try:
 except:
     MakeGenerator = None
     logging.error("Unable to make new descriptors, descriptor generator not installed")
-
-try:
-    import kyotocabinet
-except ImportError:
-    kyotocabinet = None
 
 from .raw import Mode
 
@@ -92,42 +90,32 @@ class DescriptaStore:
         self.desctiporDB = dbdir
         self.db = raw.RawStore(dbdir, mode=mode)
         self.index = MolFileIndex.MolFileIndex(os.path.join(dbdir, "__molindex__"))
-
-        inchi = os.path.join(dbdir, "inchikey.kch")
-        if os.path.exists(inchi):
-            if not kyotocabinet:
-                print("Inchi lookup exists, but kyotocabinet is not installed.",
-                      file=sys.stderr)
-            else:
-                self.inchikey = kyotocabinet.DB()
-                if mode == Mode.READONLY:
-                    self.inchikey.open(inchi, kyotocabinet.DB.OREADER)
-                else:
-                    self.inchikey.open(inchi, kyotocabinet.DB.OWRITER)
-
-        else:
-            self.inchikey = None
-
-        name = os.path.join(dbdir, "name.kch")
-        if os.path.exists(name):
-            if not kyotocabinet:
-                logging.warning("Name lookup exists, but kyotocabinet is not installed.")
-                self.name = None
-            else:
-                self.name = kyotocabinet.DB()
-                if mode == Mode.READONLY:
-                    self.name.open(name, kyotocabinet.DB.OREADER)
-                else:
-                    self.name.open(name, kyotocabinet.DB.OWRITER)
-        else:
-            print("Couldn't open name db", name, file=sys.stderr)
-            self.name = None
-
-        self.options = None
+        options = self.options = None
         optionsfile = os.path.join(dbdir, "__options__")
         if os.path.exists(optionsfile):
             with open(optionsfile, 'rb') as f:
-                self.options = pickle.load(f)
+                options = self.options = pickle.load(f)
+        else:
+            raise IOError("Not a valid Descriptastore, no options file")
+        keystore = options.get("keystore", "kyotostore")
+        
+        key_store_type = None
+        if keystore:
+            key_store_type = KeyValueAPI.get_store(keystore)
+            if not key_store_type:
+                logging.warning("Keystore %r not available, skipping", keystore)
+
+        self.inchikey = self.name = None
+        if key_store_type:
+            inchi = os.path.join(dbdir, key_store_type().get_actual_filename("inchikey"))
+            if os.path.exists(inchi):
+                self.inchikey = key_store_type()
+                self.inchikey.open(os.path.join(dbdir, "inchikey"), mode=mode)
+
+            name = os.path.join(dbdir, key_store_type().get_actual_filename("name"))
+            if os.path.exists(name):
+                self.name = key_store_type()
+                self.name.open(os.path.join(dbdir, "name"), mode=mode)
 
         # index the calculated flags
         datacols = [(i,name) for i,name in enumerate(self.db.colnames) if "_calculated" not in name]
@@ -141,7 +129,7 @@ class DescriptaStore:
         if self.inchikey is not None:
             self.inchikey.close()
         
-        if self.name is not None:
+        if self.name is not None and hasattr(self.name, "close"):
             self.name.close()
             
     def __len__(self):
@@ -199,18 +187,20 @@ class DescriptaStore:
             try:
                 logging.warning("Using slower memory intensive option")
                 logging.warning("Loading names...")
-                self.name = {name:i for i, (moldata, name)
-                             in enumerate(self.index)}
+                self.name = {name:i for i, (moldata, name) in enumerate(self.index)}
                 logging.warning("...done loading")
+                print(self.name)
             except:
                 logging.exception("Names not available from original input")
                 raise ValueError("Name index not available")
+            assert self.name
 
         try:
-            row = int(self.name[name])
+            row = self.name.get(name)
+            if row is None:
+                raise KeyError(name)
         except:
-            logging.exception("whups")
-            raise IndexError("Name %r not found"%name)
+            raise KeyError("Name %r not found"%name)
         
         return row
     
@@ -218,9 +208,8 @@ class DescriptaStore:
         """key -> returns the indicies of the inchi key"""
         if self.inchikey is None:
             raise ValueError("Inchi index not available")
-        strres = self.inchikey[key]
-        if strres is None:
+        res = self.inchikey.get(key)
+        if res is None:
             raise KeyError(key)
-        res =  eval(strres)
         return res
     

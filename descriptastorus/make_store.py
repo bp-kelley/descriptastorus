@@ -31,19 +31,15 @@
 from __future__ import print_function
 from . import DescriptaStore, MolFileIndex
 from .descriptors import MakeGenerator
+from .mode import Mode
 from rdkit.Chem import AllChem
 import pickle
 import multiprocessing
 import time, os, sys, numpy, shutil
 import logging
 from descriptastorus import MolFileIndex, raw
-try:
-    import kyotocabinet
-except:
-    kyotocabinet = None
-    logging.warning("No kyotocabinet available")
-    raise
-    
+from .keyvalue import KeyValueAPI
+
 # args.storage
 # args.smilesfile
 # args.descriptors -> descriptors to make
@@ -59,6 +55,7 @@ class MakeStorageOptions:
     def __init__(self, storage, smilesfile, 
                  hasHeader, smilesColumn, nameColumn, seperator,
                  descriptors, index_inchikey, batchsize=1000, numprocs=-1, verbose=False,
+                 keystore="kyotostore",
                  **kw):
         self.storage = storage
         self.smilesfile = smilesfile
@@ -71,6 +68,7 @@ class MakeStorageOptions:
         self.batchsize = int(batchsize)
         self.numprocs = numprocs
         self.verbose = verbose
+        self.keystore = keystore
         if (kw):
             logging.warning("%s: ignoring extra keywords: %r", self.__class__.__name__, kw)
 
@@ -178,9 +176,12 @@ def make_store(options):
     # to test molecule
     
     inchiKey = options.index_inchikey
-    if inchiKey and not kyotocabinet:
-        logging.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet")
-        return False
+    key_value_store = None
+    if inchiKey and options.keystore:
+        key_value_store = KeyValueAPI.get_store(options.keystore)
+        if not key_value_store:
+            logging.error("Indexing inchikeys requires %s, please install", options.keystore)
+            return False
     
     # make the storage directory
     if os.path.exists(options.storage):
@@ -214,22 +215,22 @@ def make_store(options):
     s = raw.MakeStore(properties.GetColumns(), sm.N, options.storage,
                       checkDirectoryExists=False)
     try:
-        if options.index_inchikey:
-            logging.info("Creating inchi store")
-            cabinet = kyotocabinet.DB()
-            inchi = os.path.join(options.storage, "inchikey.kch")
-            cabinet.open(inchi, kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)
+        if options.index_inchikey and key_value_store:
+            inchi = os.path.join(options.storage, "inchikey")
+            cabinet = key_value_store()
+            cabinet.open(inchi, Mode.WRITE)
         else:
             logging.warning("Not logging inchi (see --index-inchkey)")
+            cabinet = None
 
-        if options.nameColumn is not None:
+        if options.nameColumn is not None and key_value_store:
             logging.info("Creating name store")
-            name_cabinet = kyotocabinet.DB()
-            name = os.path.join(options.storage, "name.kch")
-            name_cabinet.open(name, kyotocabinet.DB.OWRITER | kyotocabinet.DB.OCREATE)
+            name = os.path.join(options.storage, "name")
+            name_cabinet = key_value_store()
+            name_cabinet.open(name, Mode.WRITE)
         else:
             logging.warning("Not storing name lookup (see --nameColumn)")
-
+            name_cabinet = None
 
         logging.info("Number of molecules to process: %s", numstructs)
         
@@ -301,18 +302,19 @@ def make_store(options):
             logging.info("Done with %s out of %s.  Processing time %0.2f store time %0.2f",
                 count, sm.N, procTime, storeTime)
 
-        if options.index_inchikey:
+        if cabinet and options.index_inchikey:
             logging.info("Indexing inchies")
             t1 = time.time()
             for k in sorted(inchies):
-                cabinet[k] = repr(inchies[k])
+                cabinet.set(k, inchies[k])
             logging.info("... indexed in %2.2f seconds", (time.time()-t1))
             
-        if names:
+        if name_cabinet:
             t1 = time.time()
             logging.info("Indexing names")
             for name in sorted(names):
-                name_cabinet[name] = names[name]
+                print(repr(name), repr(names[name]))
+                name_cabinet.set(name, names[name])
             logging.info("... indexed in %2.2f seconds", (time.time()-t1))
     finally:
         sm.close()

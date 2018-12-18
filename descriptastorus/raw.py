@@ -39,18 +39,13 @@ row = r.get(100000)
 Data can be updated using putRow when opened in append mode.
 """
 from __future__ import print_function
+from .mode import Mode
 import pickle, numpy, os, mmap, struct, sys, shutil
 import logging
 import six
 
 # raw stores are little endian!
 
-class Mode:
-    READONLY = 0
-    WRITE = 1
-    APPEND = 2
-    READONCE = 3 # read through the file once...
-    
 class RawStoreIter:
     def __init__(self, raw):
         self.raw = raw
