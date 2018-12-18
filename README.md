@@ -118,11 +118,11 @@ The default properties created are 'Morgan3Counts,RDKit2D'.
 Using a DescriptaStore
 ======================
 
-Using the magma descriptastore:
+Using the descriptastore (the descriptastore is a directory of files):
 
 ```
 from descriptastorus import DescriptaStore
-d = DescriptaStore("/db/cix/descriptastorus/magma")
+d = DescriptaStore("/db/cix/descriptastorus/store")
 
 # print out the column names
 print(d.descriptors().colnames)
@@ -203,7 +203,7 @@ Example:
  >>> from descriptastorus import raw
  >>> import numpy
  >>> columns = [('exactmw', numpy.float64), ('numRotatableBonds', numpy.int32) ...]
- >>> r = raw.MakeStore( columns, 2, "magma")
+ >>> r = raw.MakeStore( columns, 2, "store")
  >>> r.putRow(0, [45.223, 3])
 ```
 
@@ -213,7 +213,7 @@ Using an existing store
 After creation, to open the read only storage:
 
 ```
- >>> r = raw.RawStore("magma")
+ >>> r = raw.RawStore("store")
 ```
 
 Get the number or rows:
@@ -277,9 +277,9 @@ Using a molfile index is fairly simple:
 >>> from descriptastorus import MolFileIndex
 >>> idx = MolFileIndex("/db/cix/descriptastorus/test")
 >>> idx.get(1000)
-['CC(C)(O)c1ccc(nc1)c4ccc3C=CN(Cc2ccc(F)cc2)c3c4', 'NVP-LEI449']
+['CC(C)(O)c1ccc(nc1)c4ccc3C=CN(Cc2ccc(F)cc2)c3c4', 'XX-AAAA']
 >>> idx.getName(1000)
-'NVP-LEI449'
+'XX-AAAA'
 >>> idx.getMol(1000)
 CC(C)(O)c1ccc(nc1)c4ccc3C=CN(Cc2ccc(F)cc2)c3c4'
 ```
