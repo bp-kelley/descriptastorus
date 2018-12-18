@@ -23,6 +23,8 @@ Installing
 ==========
 
 ```
+1. install rdkit
+2. install scikit-learn
 pip install git+https://github.com/bp-kelley/descriptastorus
 ```
 
@@ -32,6 +34,32 @@ Requirements are in the setup.py file, but essentially:
  2. rdkit
  3. [optional but highly recommended] kyotocabinet
 
+Using RDKit descriptors
+=======================
+
+```
+from descriptastorus.descriptors import rdNormalizedDescriptors
+from rdkit import Chem
+import logging
+
+# make the normalized descriptor generator
+generator = rdNormalizedDescriptors.RDKit2DNormalized()
+generator.columns # list of tuples:  (descriptor_name, numpytype) ...
+
+# features = generator.process(smiles)
+# features[0] is True/False if the smiles could be processed correcty
+# features[1:] are the normalized descriptors as described in generator.columns
+
+# example for converting a smiles string into the values
+def rdkit_2d_normalized_features(smiles: str):
+    # n.b. the first element is true/false if the descriptors were properly computed
+    results = generator.process(smiles)[
+    processed, features = results[0], results[1:]
+    if processed is None:
+       logging.warning("Unable to process smiles %s", smiles)
+    # if processed is None, the features are are default values for the type
+    return features
+```
 
 Making a DescriptaStore
 =======================
@@ -70,7 +98,7 @@ Suppose you have a smiles file like the following:
 
 ```
 SMILES STRU_ID
-c1ccccc1 NVP-1234
+c1ccccc1 NAME
 ```
 
 This is a whitespace seperated file with a header.  To make the standard
@@ -132,7 +160,7 @@ for descriptors in d.descriptors():
     ...
 ```
 
-# to lookup by name
+# to lookup by name (requires kyotocabinet)
 
 ```
 rows = []
@@ -146,7 +174,7 @@ for row in rows:
     ...
 ```
 
-# To lookup by inchikey
+# To lookup by inchikey (requires kyotocabinet)
 
 ```
 rows = []
