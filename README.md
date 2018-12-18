@@ -98,7 +98,7 @@ Suppose you have a smiles file like the following:
 
 ```
 SMILES STRU_ID
-c1ccccc1 NVP-1234
+c1ccccc1 NAME
 ```
 
 This is a whitespace seperated file with a header.  To make the standard
@@ -160,7 +160,7 @@ for descriptors in d.descriptors():
     ...
 ```
 
-# to lookup by name
+# to lookup by name (requires kyotocabinet)
 
 ```
 rows = []
@@ -174,7 +174,7 @@ for row in rows:
     ...
 ```
 
-# To lookup by inchikey
+# To lookup by inchikey (requires kyotocabinet)
 
 ```
 rows = []
