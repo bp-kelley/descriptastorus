@@ -53,7 +53,7 @@ if not status:
     except:
         raise RunTimeError("git tags must be in the form release-x.y.z or simply x.y.z")
 else:
-  raise RuntimeError("git must be accessible in your path and at least one release tag should exist in the repo, aborting")
+  VERSION="1.0.0" # hardcode version
 
 setup(name='descriptastorus',
       version=VERSION,
