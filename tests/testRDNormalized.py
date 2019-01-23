@@ -10,7 +10,12 @@ import datahook
 
 one_smiles = "c1ccccc1 0"
 many_smiles = "\n".join( [ "C"*i + "c1ccccc1 " + str(i) for i in range(10) ] )
-from expected_chiral_data import expected_chiral_data
+from expected_normalized_results import expected
+
+def compare_results(unit, result, expected):
+    unit.assertEqual(result[0], expected[0])
+    for x,y in zip(result[1:], expected[1:]):
+        unit.assertAlmostEqual(x,y)
 
 class TestCase(unittest.TestCase):
     def testHaveNormalizations(self):
@@ -36,11 +41,11 @@ class TestCase(unittest.TestCase):
                                                   index_inchikey=True )
             make_store.make_store(opts)
             generator = DescriptorGenerator.REGISTRY["RDKit2DNormalized".lower()]
+            results = []
             with contextlib.closing(DescriptaStore(storefname)) as store:
                 for i in range(10):
                     r = store.descriptors().get(i)
-                    #self.assertEqual(r, expected_chiral_data[i])
-                    
+                    compare_results(self, r, expected[i])
                 
         finally:
             if os.path.exists(fname):
