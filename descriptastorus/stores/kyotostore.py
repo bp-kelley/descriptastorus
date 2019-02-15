@@ -37,7 +37,7 @@ try:
         
     KeyValueAPI.register("kyotostore", KyotoStore)
 except:
-    logging.exception("No kyotocabinet available")
+    logging.warning("No kyotocabinet available")
 
 
 
