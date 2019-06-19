@@ -36,6 +36,65 @@ Requirements are in the setup.py file, but essentially:
 
 Using RDKit descriptors
 =======================
+Grab a descriptor generator from the registry.
+
+Currently registered descriptors:
+
+	* atompaircounts
+	* morgan3counts
+	* morganchiral3counts
+	* morganfeature3counts
+	* rdkit2d
+	* rdkit2dnormalized
+	* rdkitfpbits
+
+Descriptors are input as a tuple or list to the generator.
+
+```
+from descriptastorus.descriptors.DescriptorGenerator import MakeGenerator
+generator = MakeGenerator(("RDKit2D",))
+for name, numpy_type in generator.GetColumns():
+  print("name: {} data type: {}".format(name, numpy_type))
+```
+
+The resulting columns and datatypes look like:
+```
+name: RDKit2D_calculated data type: <class 'bool'>
+name: BalabanJ data type: <class 'numpy.float64'>
+name: BertzCT data type: <class 'numpy.float64'>
+name: Chi0 data type: <class 'numpy.float64'>
+name: Chi0n data type: <class 'numpy.float64'>
+name: Chi0v data type: <class 'numpy.float64'>
+name: Chi1 data type: <class 'numpy.float64'>
+
+```
+
+Note: RDKit2D_calculated is just a flag for the store to indicate that the
+RDKit2D features were successfully calculated.
+
+To get combine multiple generators simply add them to the list
+of desired datatypes:
+
+```
+from descriptastorus.descriptors.DescriptorGenerator import MakeGenerator
+generator = MakeGenerator(("RDKit2D", "Morgan3Counts"))
+smiles = "c1ccccc1"
+data = generator.process(smiles)
+assert data[0] is True
+```
+
+The first element is True if the molecule was successfully processed, this is used
+in the descriptastor to indicate that the row is valid.
+
+If a molecule is unsuccessfully processed, None is returned
+
+```
+data = generator.process("not a smiles")
+assert data is None
+```
+
+Individual descriptor sets can also be used outside of the
+generator.
 
 ```
 from descriptastorus.descriptors import rdNormalizedDescriptors
