@@ -49,7 +49,7 @@ class DescriptaStoreIter:
     def __init__(self, store):
         self.store = store
         self.i = -1
-    def next(self):
+    def __next__(self):
         self.i += 1
         if self.i == len(self.store):
             raise StopIteration()
@@ -59,6 +59,8 @@ class DescriptaStoreIter:
         except:
             print("== DescriptaStoreIter Failed at index", self.i)
             raise
+    def next(self):
+        return self.__next__(self)
     
 class DescriptaStore:
     def __init__(self, dbdir, mode=Mode.READONLY):
