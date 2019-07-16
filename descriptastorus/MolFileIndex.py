@@ -34,6 +34,9 @@ from rdkit.Chem import AllChem
 import os, numpy, sys
 from . import raw
 import logging, shutil, pickle
+import csv
+from io import StringIO
+import functools
 
 def SDFNameGetter(buffer):
     return buffer.split("\n")[0].strip()
@@ -47,7 +50,6 @@ def nameOptFile(indexdir):
 class MolFileIter:
     def __init__(self, raw):
         self.raw = raw
-        print("Length:", len(self.raw))
         self.i = -1
         
     def __next__(self):
@@ -60,6 +62,12 @@ class MolFileIter:
             raise StopIteration()
 
     def next(self): return self.__next__()
+
+def reader(s, dialect=None):
+    return csv.reader(StringIO(s), dialect=dialect)
+
+def whitespace_reader(s):
+    return [s.split()]
 
 class MolFileIndex:
     """Index for a molecule file to provide random access to the internal molecules.
@@ -90,7 +98,25 @@ class MolFileIndex:
         self.nameColumn = options['nameColumn']
         self.sep = options['sep']
         self.nameFxnName = options['nameFxnName']
-        
+
+        try:
+            if self.sep == None:
+                self.sep = ' '
+                
+            if self.sep == 'excel':
+                self.reader = reader
+            elif self.sep == 'excel_tab':
+                self.reader = functools.partial(reader, dialect=csv.excel_tab)
+            elif self.sep == 'whitespace':
+                self.reader = whitespace_reader
+            else:
+                # assume a seperator
+                csv.register_dialect('custom_dialect', delimiter=self.sep, skipinitialspace=True)
+                self.reader = functools.partial(reader, dialect='custom_dialect')
+        except:
+            logging.exception("Can't initialize delimiter: %s", self.sep)
+            
+
         self.nameFxn = namefxns[self.nameFxnName]
         
         if self.hasHeader:
@@ -128,7 +154,7 @@ class MolFileIndex:
             
             if len(row) <= self.smilesColIdx:
                 raise IndexError("Smiles Column %d greater than rowsize %s\n"
-                                 "Perhaps the seperator is mispecified (currently %r)"% (
+                                 "Perhaps the `seperator is mispecified (currently %r)"% (
                                      self.smilesColIdx,
                                      len(row),
                                      self.sep))
@@ -179,8 +205,12 @@ class MolFileIndex:
         end = self.db.get(idx+1)[0]
         self.f.seek(start,0)
         buf = self.f.read(end-start-1)
-        if self.smilesColumn != -1:
-            return buf.split(self.sep)
+        try:
+            if self.smilesColumn != -1:
+                return list(self.reader(buf))[0]#buf.split(self.sep)
+        except:
+            logging.exception("Whups, can't split")
+            raise
         return buf
 
     def header(self):
