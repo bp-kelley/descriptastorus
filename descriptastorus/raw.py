@@ -114,7 +114,7 @@ class RawStore:
         if self._f is not None:
             self.f = mmap.mmap(self._f.fileno(), 0, access=access)
         else:
-            self.f = self._f
+            self._f = self.f
         
     def close(self):
         self.f.close()
