@@ -79,6 +79,42 @@ class TestCase(unittest.TestCase):
         finally:
             if os.path.exists(directory):
                 shutil.rmtree(directory)                
-                      
+
+    def testAppend(self):
+        directory1 = "test-store-1"
+        if os.path.exists(directory1):
+            shutil.rmtree(directory1)
+        directory2 = "test-store-2"
+        if os.path.exists(directory2):
+            shutil.rmtree(directory2)
+        
+        try:
+            r = raw.MakeStore([('name', numpy.float16)],
+                              10, directory1)
+            
+            for i in range(10):
+                r.putRow(i, [float(i)])
+
+            r2 = raw.MakeStore([('name', numpy.float16)],
+                               10, directory2)
+            
+            for i in range(10):
+                r2.putRow(i, (float(10+i),))
+            r.close()
+
+            r = raw.RawStore(directory1, mode=raw.Mode.APPEND)
+            r.append(r2)
+
+            for i in range(20):
+                print(i, r.get(i))
+                self.assertEqual(r.get(i), (float(i),))
+            r.close()
+            r2.close()
+        finally:
+            if os.path.exists(directory1):
+                shutil.rmtree(directory1)                
+            if os.path.exists(directory2):
+                shutil.rmtree(directory2)                
+        
 if __name__ == '__main__':
     unittest.main()
