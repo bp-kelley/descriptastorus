@@ -305,7 +305,6 @@ def append_store(options):
     
     indexdir = os.path.join(options.smilesfile, "__molindex__")
     molindex = MolFileIndex.MolFileIndex(indexdir)
-    origN = molindex.N
     src_filename = molindex.filename
     molindex.close()
 
@@ -335,5 +334,5 @@ def append_store(options):
     d.db.append(d2.db)
     d.close()
     d2.close()
-    d = DescriptaStore(dbdir, mode=Mode.READONLY)
-    d.close()
+    
+    # updates names

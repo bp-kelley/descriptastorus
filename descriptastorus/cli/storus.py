@@ -85,7 +85,7 @@ def main():
     if opts.append:
         append_store.append_smiles(append_store.AppendStorageOptions(**vars(opts)))
     elif opts.append_store:
-        append_store.append_store(append_store.AppendStorageOptions(**vars(opts)), append_store.APPEND_STORE)
+        append_store.append_store(append_store.AppendStorageOptions(**vars(opts)))
     else:
         d = vars(opts)
         del d['append']
