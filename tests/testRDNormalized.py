@@ -46,7 +46,7 @@ class TestCase(unittest.TestCase):
                 for i in range(10):
                     r = store.descriptors().get(i)
                     compare_results(self, r, expected[i])
-                
+
         finally:
             if os.path.exists(fname):
                 os.unlink(fname)
