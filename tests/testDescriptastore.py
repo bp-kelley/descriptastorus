@@ -311,7 +311,7 @@ class TestCase(unittest.TestCase):
                 f.write(many_smiles2)
                 
             opts.smilesfile = fname
-            append_store.append_store(opts)
+            append_store.append_smiles(opts)
             with contextlib.closing(DescriptaStore(storefname)) as store:
                 for i in range(10):
                     self.assertEqual( store.lookupName(str(i)), i)
@@ -344,5 +344,96 @@ class TestCase(unittest.TestCase):
             if os.path.exists(storefname):
                 shutil.rmtree(storefname)
 
+    def testAppendStore(self):
+        try:
+            fname = tempfile.mktemp()+".smi"
+            storefname = tempfile.mktemp()+".store"
+            storefname2 = tempfile.mktemp()+".store"
+            with open(fname, 'w') as f:
+                f.write(many_smiles)
+
+            fname2 = tempfile.mktemp()+".smi"
+            with open(fname2, 'w') as f:
+                f.write(many_smiles2)
+                
+            opts = make_store.MakeStorageOptions( storage=storefname, smilesfile=fname,
+                                                  hasHeader=False,
+                                                  smilesColumn=0, nameColumn=1,
+                                                  seperator=" ", descriptors="RDKit2DSubset",
+                                                  index_inchikey=True )
+            make_store.make_store(opts)
+
+            opts = make_store.MakeStorageOptions( storage=storefname2, smilesfile=fname2,
+                                                  hasHeader=False,
+                                                  smilesColumn=0, nameColumn=1,
+                                                  seperator=" ", descriptors="RDKit2DSubset",
+                                                  index_inchikey=True )
+            make_store.make_store(opts)
+            
+            with contextlib.closing(DescriptaStore(storefname)) as store:
+
+                for i in range(10):
+                    self.assertEqual( store.lookupName(str(i)), i)
+
+                for i in range(10):
+                    m = store.molIndex().getRDMol(i)
+                    inchi = AllChem.InchiToInchiKey(AllChem.MolToInchi(m))
+                    self.assertEqual( store.lookupInchiKey(inchi), [i])
+                self.assertEqual(store.descriptors().get(0), (True, 78.046950192, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(1), (True, 92.062600256, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(2), (True, 106.07825032, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(3), (True, 120.093900384, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(4), (True, 134.109550448, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(5), (True, 148.125200512, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(6), (True, 162.140850576, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(7), (True, 176.15650064, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(8), (True, 190.172150704, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(9), (True, 204.187800768, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(10), (False, 0.0, 0.0, 0.0, 0.0, 0.0))                
+
+                
+            opts.smilesfile = storefname2
+            opts.storage = storefname
+            append_store.append_store(opts)
+
+            with contextlib.closing(DescriptaStore(storefname)) as store:
+                #for i in range(10):
+                #    self.assertEqual( store.lookupName(str(i)), i)
+
+                #for i in range(10):
+                #    m = store.molIndex().getRDMol(i)
+                #    inchi = AllChem.InchiToInchiKey(AllChem.MolToInchi(m))
+                #    self.assertEqual( store.lookupInchiKey(inchi), [i])
+                    
+                self.assertEqual(store.descriptors().get(0), (True, 78.046950192, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(1), (True, 92.062600256, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(2), (True, 106.07825032, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(3), (True, 120.093900384, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(4), (True, 134.109550448, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(5), (True, 148.125200512, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(6), (True, 162.140850576, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(7), (True, 176.15650064, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(8), (True, 190.172150704, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(9), (True, 204.187800768, 0.0, 1.0, 0.0, 1.0))
+                
+                self.assertEqual(store.descriptors().get(10), (False, 0.0, 0.0, 0.0, 0.0, 0.0))                
+                self.assertEqual(store.descriptors().get(11+0), (True, 78.046950192, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(11+1), (True, 92.062600256, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(11+2), (True, 106.07825032, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(11+3), (True, 120.093900384, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(11+4), (True, 134.109550448, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(11+5), (True, 148.125200512, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(11+6), (True, 162.140850576, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(11+7), (True, 176.15650064, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(11+8), (True, 190.172150704, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(11+9), (True, 204.187800768, 0.0, 1.0, 0.0, 1.0))
+                self.assertEqual(store.descriptors().get(11+10), (False, 0.0, 0.0, 0.0, 0.0, 0.0))                
+        
+        finally:
+            if os.path.exists(fname):
+                os.unlink(fname)
+            if os.path.exists(storefname):
+                shutil.rmtree(storefname)
+                
 if __name__ == '__main__':  #pragma: no cover
     unittest.main()

@@ -242,8 +242,9 @@ def make_store(options):
         badColumnWarning = False
         inchies = {}
         names = {}
-        with tqdm.tqdm(total=sm.N) as pbar:
-            pbar.set_description("Processing")
+        if 1:
+        #with tqdm.tqdm(total=sm.N) as pbar:
+        #    pbar.set_description("Processing")
             while 1:
                 lastcount = count
 
@@ -262,7 +263,7 @@ def make_store(options):
                 else:
                     results = pool.map(process, joblist)
 
-                pbar.update(count-lastcount)
+                #pbar.update(count-lastcount)
                 procTime = time.time() - t1
 
                 for result in results:
@@ -308,14 +309,14 @@ def make_store(options):
         if cabinet and options.index_inchikey:
             logging.info("Indexing inchies")
             t1 = time.time()
-            for k in tqdm.tqdm(sorted(inchies)):
+            for k in sorted(inchies):#tqdm.tqdm(sorted(inchies)):
                 cabinet.set(k, inchies[k])
             logging.info("... indexed in %2.2f seconds", (time.time()-t1))
             
         if name_cabinet:
             t1 = time.time()
             logging.info("Indexing names")
-            for name in tqdm.tqdm(sorted(names)):
+            for name in sorted(names):#tqdm.tqdm(sorted(names)):
                 name_cabinet.set(name, names[name])
             logging.info("... indexed in %2.2f seconds", (time.time()-t1))
     finally:

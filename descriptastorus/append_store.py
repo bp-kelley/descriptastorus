@@ -100,7 +100,7 @@ def append_smiles_file(src, dest, hasHeader):
                     f.write(line)
     
 # not thread safe!
-def append_store(options):
+def append_smiles(options):
     # ugly
     while props:
         props.pop()
@@ -272,3 +272,68 @@ def append_store(options):
     finally:
         d.close()
         pool.close()
+
+# not thread safe!
+def append_store(options):
+    # ugly
+    while props:
+        props.pop()
+        
+    # to test molecule
+    
+    # make the storage directory
+    if not os.path.exists(options.storage):
+        raise IOError("Directory for descriptastorus does not exist: %s"%options.storage)
+    
+    with open(os.path.join(options.storage, "__options__"), "rb") as f:
+        storageOptions = pickle.load(f)
+    dbdir = options.storage
+    d = DescriptaStore(dbdir, mode=Mode.READONLY)
+    props.append( d.getDescriptorCalculator() )
+    properties = props[0]
+
+    if d.inchikey and not kyotocabinet:
+        logging.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet")
+        return False
+
+    d.close()
+    d2 = DescriptaStore(options.smilesfile, mode=Mode.READONLY)
+    if d2.getDescriptorNames(True) != d.getDescriptorNames(True):
+        logging.error("Descriptors are not compatible between stores")
+        return False
+
+    
+    indexdir = os.path.join(options.smilesfile, "__molindex__")
+    molindex = MolFileIndex.MolFileIndex(indexdir)
+    origN = molindex.N
+    src_filename = molindex.filename
+    molindex.close()
+
+    indexdir = os.path.join(options.storage, "__molindex__")
+    molindex = MolFileIndex.MolFileIndex(indexdir)
+    origN = molindex.N
+    dest_filename = molindex.filename
+    molindex.close()
+    
+    
+    molindex = None
+
+    append_smiles_file(src=src_filename,
+                       dest=dest_filename,
+                       hasHeader=options.hasHeader)
+                
+    sm = MolFileIndex.MakeSmilesIndex(dest_filename,
+                                      indexdir,
+                                      sep=options.seperator,
+                                      hasHeader = options.hasHeader,
+                                      smilesColumn = options.smilesColumn,
+                                      nameColumn = options.nameColumn,
+                                      reIndex=True)
+
+    # XXX need to redo names and inchis...
+    d = DescriptaStore(dbdir, mode=Mode.APPEND)
+    d.db.append(d2.db)
+    d.close()
+    d2.close()
+    d = DescriptaStore(dbdir, mode=Mode.READONLY)
+    d.close()

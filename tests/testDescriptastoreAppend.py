@@ -59,7 +59,7 @@ class TestCase(unittest.TestCase):
                 f.write(two_smiles)
 
             opts.smilesfile = fname2
-            append_store.append_store(opts)
+            append_store.append_smiles(opts)
             with contextlib.closing(DescriptaStore(storefname)) as store:
                 self.assertEqual(len(store), 2)
                 self.assertEqual( store.lookupName("0"), 0)

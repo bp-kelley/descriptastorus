@@ -114,7 +114,7 @@ class TestCase(unittest.TestCase):
             make_store.make_store(make_store.MakeStorageOptions(**vars(opts)))
 
             opts = storus.parser.parse_args(args2)
-            append_store.append_store(append_store.AppendStorageOptions(**vars(opts)))
+            append_store.append_smiles(append_store.AppendStorageOptions(**vars(opts)))
             
             with contextlib.closing(DescriptaStore(storefname)) as store:
                 

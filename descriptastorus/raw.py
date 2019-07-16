@@ -153,6 +153,7 @@ class RawStore:
 
     def append(self, raw):
         """Append one raw store to another"""
+
         if self.mode != Mode.APPEND:
             raise IOError("Storage must be opened in append mode to add blank rows")
             
@@ -167,8 +168,9 @@ class RawStore:
             dst.seek(N*self.rowbytes)
             with open(raw.fname, 'rb') as src:
                 shutil.copyfileobj(src, dst)
-
+        print("****** size is now", self.N)
         self._resetSize()
+        print("****** size is now(2)", self.N)
         
         
     def getDict(self, idx):

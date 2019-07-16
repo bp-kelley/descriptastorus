@@ -44,6 +44,8 @@ parser.add_argument("storage",
 
 parser.add_argument("--append", action="store_true",
                     help="Append new compounds to the smiles file (rejecting compounds with the same name)")
+parser.add_argument("--append-store", action="store_true",
+                    help="Append specified storage to the")
 
 parser.add_argument("--descriptors", default="Morgan3Counts,RDKit2D")
 parser.add_argument("--hasHeader", action="store_true",
@@ -77,9 +79,14 @@ def main():
     if opts.verbose:
         logging.getLogger().setLevel(logging.INFO)
 
-    if not opts.append:
+    if opts.append and opts.append_store:
+        logging.error("Use one of --append --append-store")
+        
+    if opts.append:
+        append_store.append_smiles(append_store.AppendStorageOptions(**vars(opts)))
+    elif opts.append_store:
+        append_store.append_store(append_store.AppendStorageOptions(**vars(opts)), append_store.APPEND_STORE)
+    else:
         d = vars(opts)
         del d['append']
         make_store.make_store(make_store.MakeStorageOptions(**d))
-    else:
-        append_store.append_store(append_store.AppendStorageOptions(**vars(opts)))
