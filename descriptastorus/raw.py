@@ -80,7 +80,9 @@ class RawStore:
         self.directory = directory
         with open(os.path.join(directory, "__rawformat__"), 'rb') as rawformat:
             self.__dict__.update(pickle.load(rawformat))
-            
+
+        self.unpack = struct.Struct(self.pack_format).unpack
+        
         fname = self.fname = os.path.join(directory, "__store___")
         colCache = self.colCacheDir = os.path.join(directory, "__colstore___")
 
@@ -191,7 +193,7 @@ class RawStore:
             raise IndexError("out or range %d"%idx)
         
         _bytes = self.f.read(self.rowbytes)
-        res = struct.unpack(self.pack_format, _bytes)
+        res = self.unpack(_bytes)#struct.unpack(self.pack_format, _bytes)
         if "s" not in self.pack_format:
             return res
         else:
