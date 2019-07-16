@@ -190,7 +190,7 @@ class MolFileIndex:
         self.f.close()
 
     def __len__(self):
-        return self.db.N
+        return self.N
     
     def __iter__(self):
         return MolFileIter(self)
