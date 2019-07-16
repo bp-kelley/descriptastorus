@@ -124,6 +124,15 @@ class RawStore:
     def __iter__(self):
         return RawStoreIter(self)
 
+    def _resetSize(self):
+        opts = None
+        with open(os.path.join(self.directory, "__rawformat__"), 'rb') as rawformat:
+            opts = pickle.load(rawformat)
+        opts['N'] = self.N
+        with open(os.path.join(self.directory, "__rawformat__"), 'wb') as rawformat:
+            pickle.dump(opts, rawformat)
+        self._openfile()
+        
     def appendBlankRows(self, M):
         """Adds M blank rows to the store (must be opened in append mode)"""
         if self.mode != Mode.APPEND:
@@ -140,14 +149,27 @@ class RawStore:
         self.N += M
         _f.close()
         logging.info("Filesize is %s", os.path.getsize(self.fname))
+        self._resetSize()
+
+    def append(self, raw):
+        """Append one raw store to another"""
+        if self.mode != Mode.APPEND:
+            raise IOError("Storage must be opened in append mode to add blank rows")
+            
+        if raw.getColFormats() != self.getColFormats():
+            raise ValueError("Column formats are not compatible for appending store")
+        N = self.N
+        M = len(raw)
+        self.N += M
         
-        opts = None
-        with open(os.path.join(self.directory, "__rawformat__"), 'rb') as rawformat:
-            opts = pickle.load(rawformat)
-        opts['N'] = self.N
-        with open(os.path.join(self.directory, "__rawformat__"), 'wb') as rawformat:
-            pickle.dump(opts, rawformat)
-        self._openfile()
+        self.close()
+        with open(self.fname, 'r+b') as dst:
+            dst.seek(N*self.rowbytes)
+            with open(raw.fname, 'rb') as src:
+                shutil.copyfileobj(src, dst)
+
+        self._resetSize()
+        
         
     def getDict(self, idx):
         """{colname:value, ...} Return the row at idx as a dictionary"""
