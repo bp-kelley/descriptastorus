@@ -39,6 +39,7 @@ import time, os, sys, numpy, shutil
 import logging
 from descriptastorus import MolFileIndex, raw
 from .keyvalue import KeyValueAPI
+import tqdm
 
 # args.storage
 # args.smilesfile
@@ -241,79 +242,80 @@ def make_store(options):
         badColumnWarning = False
         inchies = {}
         names = {}
-        while 1:
-            lastcount = count
+        with tqdm.tqdm(total=sm.N) as pbar:
+            pbar.set_description("Processing")
+            while 1:
+                lastcount = count
 
-            if options.nameColumn is not None:
-                joblist, count = getJobsAndNames(sm, options, count, numstructs, batchsize, num_cpus, names)
-            else:
-                joblist, count = getJobs(sm, options, count, numstructs, batchsize, num_cpus)
-                    
-            if not joblist:
-                break
+                if options.nameColumn is not None:
+                    joblist, count = getJobsAndNames(sm, options, count, numstructs, batchsize, num_cpus, names)
+                else:
+                    joblist, count = getJobs(sm, options, count, numstructs, batchsize, num_cpus)
 
-            
-            t1 = time.time()
-            if options.index_inchikey:
-                results = pool.map(processInchi, joblist)
-            else:
-                results = pool.map(process, joblist)
+                if not joblist:
+                    break
 
 
-            procTime = time.time() - t1
-            
-            for result in results:
-                numOutput += len(result)
-                if numOutput == 0 and not badColumnWarning and len(result) == 0:
-                    badColumnWarning = True
-                    logging.warning("no molecules processed in batch, check the smilesColumn")
-                    logging.warning("First 10 smiles:\n")
-                    logging.warning("\n".join(["%i: %s"%(i,sm.get(i)) for i in range(0, min(sm.N,10))]))
-
-                
-            flattened = [val for sublist in results for val in sublist]
-            flattened.sort()
-
-            t1 = time.time()
-            delta = 0.0
-            # flatten the results so that we store them in index order
-            for result in flattened:
+                t1 = time.time()
                 if options.index_inchikey:
-                    i,v,inchi,key = result
-                    if v:
-                        try:
-                            s.putRow(i, v)
-                        except ValueError:
-                            logging.exception("Columns: %s\nData: %r",
-                                              properties.GetColumns(),
-                                              v)
-                            raise
-                    if inchi in inchies:
-                        inchies[key].append(i)
-                    else:
-                        inchies[key] = [i]
+                    results = pool.map(processInchi, joblist)
+                else:
+                    results = pool.map(process, joblist)
 
-                elif options.nameColumn is not None:
-                    i,v = result
-                    if v:
-                        s.putRow(i, v)
-                            
-            storeTime = time.time() - t1
-            logging.info("Done with %s out of %s.  Processing time %0.2f store time %0.2f",
-                count, sm.N, procTime, storeTime)
+                pbar.update(count-lastcount)
+                procTime = time.time() - t1
+
+                for result in results:
+                    numOutput += len(result)
+                    if numOutput == 0 and not badColumnWarning and len(result) == 0:
+                        badColumnWarning = True
+                        logging.warning("no molecules processed in batch, check the smilesColumn")
+                        logging.warning("First 10 smiles:\n")
+                        logging.warning("\n".join(["%i: %s"%(i,sm.get(i)) for i in range(0, min(sm.N,10))]))
+
+
+                flattened = [val for sublist in results for val in sublist]
+                flattened.sort()
+
+                t1 = time.time()
+                delta = 0.0
+                # flatten the results so that we store them in index order
+                for result in flattened:
+                    if options.index_inchikey:
+                        i,v,inchi,key = result
+                        if v:
+                            try:
+                                s.putRow(i, v)
+                            except ValueError:
+                                logging.exception("Columns: %s\nData: %r",
+                                                  properties.GetColumns(),
+                                                  v)
+                                raise
+                        if inchi in inchies:
+                            inchies[key].append(i)
+                        else:
+                            inchies[key] = [i]
+
+                    else:
+                        i,v = result
+                        if v:
+                            s.putRow(i, v)
+
+                storeTime = time.time() - t1
+                logging.debug("Done with %s out of %s.  Processing time %0.2f store time %0.2f",
+                    count, sm.N, procTime, storeTime)
 
         if cabinet and options.index_inchikey:
             logging.info("Indexing inchies")
             t1 = time.time()
-            for k in sorted(inchies):
+            for k in tqdm.tqdm(sorted(inchies)):
                 cabinet.set(k, inchies[k])
             logging.info("... indexed in %2.2f seconds", (time.time()-t1))
             
         if name_cabinet:
             t1 = time.time()
             logging.info("Indexing names")
-            for name in sorted(names):
-                print(repr(name), repr(names[name]))
+            for name in tqdm.tqdm(sorted(names)):
                 name_cabinet.set(name, names[name])
             logging.info("... indexed in %2.2f seconds", (time.time()-t1))
     finally:
