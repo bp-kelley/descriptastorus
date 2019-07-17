@@ -50,7 +50,11 @@ class RawStoreIter:
     def __init__(self, raw):
         self.raw = raw
         self.i = -1
+        
     def next(self):
+        return self.__name__(self)
+    
+    def __next__(self):
         self.i += 1
         if self.i >= self.raw.N:
             raise StopIteration()
