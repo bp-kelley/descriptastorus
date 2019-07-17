@@ -45,7 +45,6 @@ try:
 except:
     kyotocabinet = None
     logging.warning("No kyotocabinet available")
-    raise
 
 class AppendStorageOptions:
     def __init__(self, storage, smilesfile, 
