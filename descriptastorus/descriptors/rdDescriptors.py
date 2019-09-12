@@ -167,6 +167,29 @@ class RDKitFPBits(DescriptorGenerator):
 RDKitFPBits()
 
 
+class RDKitFPBranched(DescriptorGenerator):
+    """Computes RDKitFp bitvector"""
+    NAME = "RDKitBranchedFPBits"
+    def __init__(self, minPathLen=1, maxPathLen=7, nbits=2048):
+        if minPathLen != 1 or maxPathLen != 7 or nbits != 2048:
+          self.NAME = self.NAME + ("%s-%s-%s"%(minPathLen,maxPathLen,nbits))
+            
+        DescriptorGenerator.__init__(self)
+        # specify names and numpy types for all columns
+        self.minPathLen = minPathLen
+        self.maxPathLen = maxPathLen
+        self.nbits = nbits
+        ap = [("RDKFP-%d"%d, numpy.uint8) for d in range(nbits)]
+        self.columns += ap
+
+    def calculateMol(self, m, smiles, internalParsing=False):
+        counts = list(Chem.RDKFingerprint(m, minPath=self.minPathLen, branchedPaths=False,
+                                          maxPath=self.maxPathLen, fpSize=self.nbits))
+        counts = [ clip(x,smiles) for x in counts ]
+        return counts        
+
+RDKitFPBranched()
+
 
 RDKIT_PROPS = {"1.0.0": ['BalabanJ', 'BertzCT', 'Chi0', 'Chi0n', 'Chi0v', 'Chi1', 'Chi1n',
                          'Chi1v', 'Chi2n', 'Chi2v', 'Chi3n', 'Chi3v', 'Chi4n', 'Chi4v',
