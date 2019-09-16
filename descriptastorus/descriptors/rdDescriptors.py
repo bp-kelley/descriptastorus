@@ -167,9 +167,9 @@ class RDKitFPBits(DescriptorGenerator):
 RDKitFPBits()
 
 
-class RDKitFPBranched(DescriptorGenerator):
+class RDKitFPUnbranched(DescriptorGenerator):
     """Computes RDKitFp bitvector"""
-    NAME = "RDKitBranchedFPBits"
+    NAME = "RDKitUnbranchedFPBits"
     def __init__(self, minPathLen=1, maxPathLen=7, nbits=2048):
         if minPathLen != 1 or maxPathLen != 7 or nbits != 2048:
           self.NAME = self.NAME + ("%s-%s-%s"%(minPathLen,maxPathLen,nbits))
@@ -188,7 +188,7 @@ class RDKitFPBranched(DescriptorGenerator):
         counts = [ clip(x,smiles) for x in counts ]
         return counts        
 
-RDKitFPBranched()
+RDKitFPUnbranched()
 
 
 RDKIT_PROPS = {"1.0.0": ['BalabanJ', 'BertzCT', 'Chi0', 'Chi0n', 'Chi0v', 'Chi1', 'Chi1n',
