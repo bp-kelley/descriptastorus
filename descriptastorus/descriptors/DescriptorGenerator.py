@@ -32,6 +32,9 @@ from __future__ import print_function
 from rdkit import Chem
 import logging, numpy, sys
 
+# set to 0 to disable caching
+MAX_CACHE = 100000
+
 class DescriptorGenerator:
     REGISTRY = {}
     NAME = None
@@ -44,7 +47,8 @@ class DescriptorGenerator:
         # the columns to be actually calculated
         #  GetColumns returns more columns here.
         self.columns = []
-
+        self.cache = {}
+        
     def molFromSmiles(self, smiles):
         """Prepare a smiles to a molecule"""
         return Chem.MolFromSmiles(smiles)
@@ -74,6 +78,13 @@ class DescriptorGenerator:
         The first value returned is always True to indicate that the
         descriptors have actually been set in the store
         """
+        # let's keep us from exploding
+        if len(self.cache) > MAX_CACHE:
+            self.cache.clear()
+            
+        if smiles in self.cache:
+            return self.cache[smiles]
+        
         if not internalParsing:
             m = self.molFromMol(m)
 
@@ -103,6 +114,7 @@ class DescriptorGenerator:
             res.insert(0, False)
         else:
             res.insert(0, True)
+        self.cache[smiles] = res
         return res
     
     def processMols(self, mols, smiles, internalParsing=False):
