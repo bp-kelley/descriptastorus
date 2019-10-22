@@ -58,7 +58,11 @@ for name in rdDescriptors.FUNCS:
 def applyNormalizedFunc(name, m):
     if name not in cdfs:
         return 0.0
-    return cdfs[name](rdDescriptors.applyFunc(name,m))
+    try:
+        return cdfs[name](rdDescriptors.applyFunc(name,m))
+    except:
+        logging.exception("Could not compute %s for molecule", name)
+        return 0.0
 
 class RDKit2DNormalized(rdDescriptors.RDKit2D):
     NAME = "RDKit2DNormalized"
