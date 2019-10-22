@@ -33,7 +33,9 @@ from rdkit import Chem
 import logging, numpy, sys
 
 # set to 0 to disable caching
-MAX_CACHE = 100000
+MAX_CACHE = 10000
+cache_hit = 0
+cache_miss = 0
 
 class DescriptorGenerator:
     REGISTRY = {}
@@ -78,13 +80,17 @@ class DescriptorGenerator:
         The first value returned is always True to indicate that the
         descriptors have actually been set in the store
         """
+        global cache_hit, cache_miss
         # let's keep us from exploding
         if len(self.cache) > MAX_CACHE:
             self.cache.clear()
-            
-        if smiles in self.cache:
-            return self.cache[smiles]
-        
+
+        res,_ = self.cache.get(smiles, (None,None))
+        if res is not None:
+            cache_hit += 1
+            return res
+
+        cache_miss += 1
         if not internalParsing:
             m = self.molFromMol(m)
 
@@ -114,7 +120,7 @@ class DescriptorGenerator:
             res.insert(0, False)
         else:
             res.insert(0, True)
-        self.cache[smiles] = res
+        self.cache[smiles] = res, m
         return res
     
     def processMols(self, mols, smiles, internalParsing=False):
@@ -165,23 +171,55 @@ class DescriptorGenerator:
         allmols = []
         indices = []
         goodsmiles = []
+        _results = []
+        
         for i,smile in enumerate(smiles):
-            m = self.molFromSmiles(smile)
-            if m:
-                mols.append(m)
-                indices.append(i)
-                goodsmiles.append(smile)
-            allmols.append(m)
-        results = self.processMols(mols, goodsmiles, internalParsing=True)
+            res,m = self.cache.get(smile, (None, None))
+            if res:
+                _results.append((i, res))
+                allmols.append(m)
+            else:
+                m = self.molFromSmiles(smile)
+                if m:
+                    mols.append(m)
+                    indices.append(i)
+                    goodsmiles.append(smile)
+                allmols.append(m)
 
-        if len(indices) == len(smiles):
-            return mols, results
+        # all cached
+        if len(_results) == len(smiles):
+            all_results = [r[1] for r in _results]
+            return allmols, all_results
+        
+        # none cached
+        elif len(_results) == 0:
+            results = self.processMols(mols, goodsmiles, internalParsing=True)
+            
+            if len(indices) == len(smiles):
+                for smile, res, m in zip(smiles, results, allmols):
+                    self.cache[smile] = res, m
+                    
+                return mols, results
 
-        # default values are None
-        all_results = [None] * len(smiles)
-        for idx,result in zip(indices, results):
-            all_results[idx] = result
-        return allmols, all_results
+            # default values are None
+            all_results = [None] * len(smiles)
+            for idx,result,m in zip(indices, results, allmols):
+                self.cache[smiles[idx]] = result,m
+                all_results[idx] = result
+            return allmols, all_results
+        # some cached
+        else:
+            results = self.processMols(mols, goodsmiles, internalParsing=True)
+            all_results = [None] * len(smiles)
+            # grab cached
+            for i,res in _results:
+                all_results[i] = res
+
+            # grab processed
+            for idx,result,m in zip(indices, results, allmols):
+                self.cache[smiles[idx]] = result,m
+                all_results[idx] = result
+            return allmols, all_results
 
     def processCtab(self, ctab):
         raise NotImplementedError
@@ -195,11 +233,13 @@ class Container(DescriptorGenerator):
         columns = self.columns = []
         for g in generators:
             columns.extend(g.GetColumns())
+        self.cache = {}
 
     def processMol(self, m, smiles, internalParsing=False):
         results = []
         for g in self.generators:
             results.extend(g.processMol(m,smiles, internalParsing))
+            
         return results
 
     def processMols(self, mols, smiles, internalParsing=False):
