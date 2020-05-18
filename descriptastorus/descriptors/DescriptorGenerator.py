@@ -17,7 +17,7 @@
 #       permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANimpTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
 # A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
 # OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
@@ -31,6 +31,8 @@
 from __future__ import print_function
 from rdkit import Chem
 import logging, numpy, sys
+import pandas as pd
+import pandas_flavor as pf
 
 # set to 0 to disable caching
 MAX_CACHE = 10000
@@ -164,7 +166,7 @@ class DescriptorGenerator:
 
         return self.processMol(mol, smiles, internalParsing=True)
 
-    def processSmiles(self, smiles):
+    def processSmiles(self, smiles, keep_mols=True):
         """smiles -> descriptors
         Process many smiles string and generate the descriptors"""
         mols = []
@@ -177,14 +179,16 @@ class DescriptorGenerator:
             res,m = self.cache.get(smile, (None, None))
             if res:
                 _results.append((i, res))
-                allmols.append(m)
+                if keep_mols:
+                    allmols.append(m)
             else:
                 m = self.molFromSmiles(smile)
                 if m:
                     mols.append(m)
                     indices.append(i)
                     goodsmiles.append(smile)
-                allmols.append(m)
+                if keep_mols:
+                    allmols.append(m)
 
         # all cached
         if len(_results) == len(smiles):
@@ -256,6 +260,12 @@ class Container(DescriptorGenerator):
     
 
 def MakeGenerator( generator_names ):
+    """Make a descriptor generator by combining multiple generators
+
+      :param generator_names: list of available generator names
+
+      :result: DescriptorGenerator
+    """
     if not len(generator_names):
         logging.warning("MakeGenerator called with no generator names")
         raise ValueError("MakeGenerator called with no generator names")
@@ -274,4 +284,39 @@ def MakeGenerator( generator_names ):
         return Container(generators)
     if len(generators):
         return generators[0]
+
+@pf.register_dataframe_method
+def create_descriptors(df: pd.DataFrame,
+                       mols_column_name: str,
+                       generator_names: list):
+    """pyjanitor style function for using the descriptor generator
+
+    Convert a column of smiles strings or RDKIT Mol objects into Descriptors.
+    Returns a new dataframe without any of the original data. This is
+    intentional, as Descriptors are usually high-dimensional
+    features.
+
+    This method does not mutate the original DataFrame.
+
+    .. code-block:: python
+        import pandas as pd
+        import descriptastorus.descriptors
+        df = pd.DataFrame(...)
+        # For "counts" kind
+        descriptors = descriptastorus.descriptors.create_descriptors(
+            mols_column_name='smiles', generator_names=["Morgan3Count"])
+    """
+    generator = MakeGenerator(generator_names)
+    mols = df[mols_column_name]
+    if len(mols):
+        if type(mols[0]) == str:
+            _, results = generator.processSmiles(mols)
+        else:
+            results = generator.processMols(mols, [Chem.MolToSmiles(m) for m in mols])
+
+    else:
+        results = []
+    fpdf = pd.DataFrame(results, columns=generator.GetColumns())
+    fpdf.index = df.index
+    return fpdf
 
