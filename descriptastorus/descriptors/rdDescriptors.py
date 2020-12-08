@@ -46,6 +46,29 @@ def clip(v, name):
     return v
         
 
+class Morgan(DescriptorGenerator):
+    """Computes Morgan3 bitvector counts"""
+    NAME = "Morgan%s"
+    def __init__(self, radius=3, nbits=2048):
+        if radius == 3 and nbits == 2048:
+            self.NAME = self.NAME % "3"
+        else:
+            self.NAME = (self.NAME%radius)+"-%s"%nbits
+            
+        DescriptorGenerator.__init__(self)
+        # specify names and numpy types for all columns
+        self.radius = radius
+        self.nbits = nbits
+        morgan = [("m3-%d"%d, numpy.uint8) for d in range(nbits)]
+        self.columns += morgan
+
+    def calculateMol(self, m, smiles, internalParsing=False):
+        counts = list(rd.GetMorganFingerprintAsBitVect(m,
+                                                       radius=self.radius, nBits=self.nbits))
+        return counts        
+
+Morgan()
+
 class MorganCounts(DescriptorGenerator):
     """Computes Morgan3 bitvector counts"""
     NAME = "Morgan%sCounts"
@@ -70,6 +93,28 @@ class MorganCounts(DescriptorGenerator):
 
 MorganCounts()
 
+class ChiralMorgan(DescriptorGenerator):
+    """Computes Morgan3 bitvector counts"""
+    NAME = "Morgan%sCounts"
+    def __init__(self, radius=3, nbits=2048):
+        if radius == 3 and nbits == 2048:
+            self.NAME = self.NAME % "Chiral3"
+        else:
+            self.NAME = (self.NAME%("Chiral%s"%radius))+"-%s"%nbits
+            
+        DescriptorGenerator.__init__(self)
+        # specify names and numpy types for all columns
+        self.radius = radius
+        self.nbits = nbits
+        morgan = [("cm3-%d"%d, numpy.uint8) for d in range(nbits)]
+        self.columns += morgan
+
+    def calculateMol(self, m, smiles, internalParsing=False):
+        return list(rd.GetMorganFingerprint(
+            m, radius=self.radius, nBits=self.nbits, useChirality=True))
+
+ChiralMorgan()
+
 class ChiralMorganCounts(DescriptorGenerator):
     """Computes Morgan3 bitvector counts"""
     NAME = "Morgan%sCounts"
@@ -93,6 +138,29 @@ class ChiralMorganCounts(DescriptorGenerator):
         return counts        
 
 ChiralMorganCounts()
+
+class FeatureMorgan(DescriptorGenerator):
+    """Computes Morgan3 bitvector counts"""
+    NAME = "Morgan%sCounts"
+    def __init__(self, radius=3, nbits=2048):
+        if radius == 3 and nbits == 2048:
+            self.NAME = self.NAME % "Feature3"
+        else:
+            self.NAME = (self.NAME%("Feature%s"%radius))+"-%s"%nbits
+            
+        DescriptorGenerator.__init__(self)
+        # specify names and numpy types for all columns
+        self.radius = radius
+        self.nbits = nbits
+        morgan = [("fm3-%d"%d, numpy.uint8) for d in range(nbits)]
+        self.columns += morgan
+
+    def calculateMol(self, m, smiles, internalParsing=False):
+        return list(rd.GetMorganFingerprintAsBitVect(
+            m, radius=self.radius, nBits=self.nbits, invariants=rd.GetFeatureInvariants(m)))
+
+
+FeatureMorgan()
 
 
 class FeatureMorganCounts(DescriptorGenerator):
@@ -119,6 +187,27 @@ class FeatureMorganCounts(DescriptorGenerator):
 
 FeatureMorganCounts()
 
+class AtomPair(DescriptorGenerator):
+    """Computes AtomPairs bitvector counts"""
+    NAME = "AtomPairCounts"
+    def __init__(self, minPathLen=1, maxPathLen=30, nbits=2048):
+        if minPathLen != 1 or maxPathLen != 30 or nbits != 2048:
+            self.NAME = self.NAME + ("%s-%s-%s"%(minPathLen,maxPathLen,nbits))
+            
+        DescriptorGenerator.__init__(self)
+        # specify names and numpy types for all columns
+        self.minPathLen = minPathLen
+        self.maxPathLen = maxPathLen
+        self.nbits = nbits
+        ap = [("AP-%d"%d, numpy.uint8) for d in range(nbits)]
+        self.columns += ap
+
+    def calculateMol(self, m, smiles, internalParsing=False):
+        return list(rd.GetAtomPairFingerprint(m, minLength=self.minPathLen, 
+                                                      maxLength=self.maxPathLen, nBits=self.nbits))
+
+
+AtomPair()
 
 class AtomPairCounts(DescriptorGenerator):
     """Computes AtomPairs bitvector counts"""
@@ -146,7 +235,7 @@ AtomPairCounts()
 class RDKitFPBits(DescriptorGenerator):
     """Computes RDKitFp bitvector"""
     NAME = "RDKitFPBits"
-    def __init__(self, minPathLen=1, maxPathLen=7, nbits=2048):
+    def __init__(self, minPathLen=1, maxPathLen=7, nbits=2048, clip=clip):
         if minPathLen != 1 or maxPathLen != 7 or nbits != 2048:
           self.NAME = self.NAME + ("%s-%s-%s"%(minPathLen,maxPathLen,nbits))
             
