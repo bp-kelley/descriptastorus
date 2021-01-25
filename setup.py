@@ -29,8 +29,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-
-
+import sys
+try:
+  import rdkit
+except:
+  print("Descriptastorus requires rkdit to function, this is not installable by pip", file=sys.stderr)
+  print(" see https://rdkit.org for more information", file=sys.stderr)
+  sys.exit(1)
+  
 from setuptools import setup, find_packages
 try:
   from commands import getstatusoutput
@@ -61,8 +67,9 @@ setup(name='descriptastorus',
       author='Brian Kelley',
       author_email='brian.kelley@novartis.com',
       url='https://bitbucket.org/novartisnibr/rdkit-descriptastorus/',
+      install_requires=['pandas_flavor'],
       test_suite='nose.collector',
-      tests_require=['nose'],
+      tests_require=['nose', 'pandas_flavor'],
       include_package_data=True,
       entry_points={
           'console_scripts': [
