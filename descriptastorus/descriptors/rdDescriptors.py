@@ -383,7 +383,7 @@ def applyFunc(name, m):
 class RDKit2D(DescriptorGenerator):
     """Computes all RDKit Descriptors"""
     NAME = "RDKit2D"
-    def __init__(self, properties=RDKIT_PROPS[CURRENT_VERSION]):
+    def __init__(self, properties=RDKIT_PROPS["1.0.0"]):
         DescriptorGenerator.__init__(self)
         # specify names and numpy types for all columns
         if not properties:
@@ -406,8 +406,12 @@ class RDKit2D(DescriptorGenerator):
     def calculateMol(self, m, smiles, internalParsing=False):
         res = [ applyFunc(name, m) for name, _ in self.columns ]
         return res
-    
+
+
+class RDKit2Dv2(RDKit2D):
+    NAME = "RDKit2Dv2"
+    def __init__(self):
+        RDKit2D.__init__(self, properties=RDKIT_PROPS["2.0.0"])
 
 RDKit2D()
-
-    
+RDKit2Dv2()
