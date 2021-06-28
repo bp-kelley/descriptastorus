@@ -75,8 +75,16 @@ class MakeStorageOptions:
 
 # ugly multiprocessing nonesense
 #  this makes this really not threadsafe
-props = []
+PROPS = None
+def init_worker(descriptors):
+    global PROPS
+    PROPS = MakeGenerator(descriptors.split(","))
 
+def init_from_store(dbdir):
+    global PROPS
+    d = DescriptaStore(dbdir, mode=Mode.READONLY)
+    PROPS = d.getDescriptorCalculator() 
+    
 def process( job ):
     if job:
         logging.debug("Running on %s jobs from index %s to %s",
@@ -87,7 +95,7 @@ def process( job ):
     res = []
     try:
         smiles = [s for _,s in job]
-        _, results = props[0].processSmiles(smiles)
+        _, results = PROPS.processSmiles(smiles)
         if len(smiles) != len(results):
             logging.error("Failed batch from index %s to %s"%(
                 job[0][0], job[-1][0]))
@@ -112,7 +120,7 @@ def processInchi( job ):
     res = []
     try:
         smiles = [s for _,s in job]
-        mols, results = props[0].processSmiles(smiles)
+        mols, results = PROPS.processSmiles(smiles)
         if len(smiles) != len(results):
             logging.error("Failed batch from index %s to %s"%(
                 job[0][0], job[-1][0]))
@@ -169,13 +177,10 @@ def getJobs(molindex, options, start, end, batchsize, nprocs):
 
 # not thread safe!
 def make_store(options):
-    while props:
-        props.pop()
-        
-    props.append( MakeGenerator(options.descriptors.split(",")) )
-    properties = props[0]
-    # to test molecule
+    # make the generator to see if we fail...
+    properties = MakeGenerator(options.descriptors.split(","))
     
+    # do a test molecule
     inchiKey = options.index_inchikey
     key_value_store = None
     if inchiKey and options.keystore:
@@ -195,7 +200,7 @@ def make_store(options):
         # never use more than the maximum number
         num_cpus = min(int(options.numprocs), multiprocessing.cpu_count())
             
-    pool = multiprocessing.Pool(num_cpus)
+    pool = multiprocessing.Pool(num_cpus, initializer=init_worker, initargs=(options.descriptors,))
 
     os.mkdir(options.storage)
     with open(os.path.join(options.storage, "__options__"), 'wb') as f:

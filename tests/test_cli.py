@@ -8,6 +8,13 @@ import tempfile, contextlib
 import logging, os, shutil
 from rdkit.Chem import AllChem
 
+try:
+    if sys.platform == 'darwin':
+        import multiprocessing
+        multiprocessing.set_start_method('fork')
+except:
+    pass
+
 one_smiles = "c1ccccc1 0"
 many_smiles = "\n".join( [ "C"*i + "c1ccccc1 " + str(i) for i in range(10) ] + ["NOSTRUCT foo"] )
 many_smiles2 = "\n".join( [ "C"*i + "c1ccccc1 " + str(i+11) for i in range(10) ] + ["NOSTRUCT foo2"] )
@@ -192,5 +199,6 @@ class TestCase(unittest.TestCase):
                 os.unlink(fname)
             if os.path.exists(storefname):
                 shutil.rmtree(storefname)
+
 if __name__ == '__main__':  #pragma: no cover
     unittest.main()

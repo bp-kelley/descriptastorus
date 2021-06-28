@@ -7,6 +7,13 @@ from descriptastorus.descriptors.DescriptorGenerator import DescriptorGenerator
 import contextlib, tempfile, os, shutil, sys
 import datahook
 
+try:
+    if sys.platform == 'darwin':
+        import multiprocessing
+        multiprocessing.set_start_method('fork')
+except:
+    pass
+
 one_smiles = "c1ccccc1 0"
 many_smiles = "\n".join( [ "C"*i + "c1ccccc1 " + str(i) for i in range(10) ] )
 
@@ -94,3 +101,5 @@ class TestCase(unittest.TestCase):
             if os.path.exists(storefname):
                 shutil.rmtree(storefname)
 
+if __name__ == '__main__':
+    unittest.main()

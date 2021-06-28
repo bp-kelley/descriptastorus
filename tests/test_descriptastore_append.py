@@ -4,6 +4,13 @@ from rdkit.Chem import AllChem
 from descriptastorus import append_store, make_store, DescriptaStore
 from descriptastorus.descriptors.rdDescriptors import RDKit2D
 
+try:
+    if sys.platform == 'darwin':
+        import multiprocessing
+        multiprocessing.set_start_method('fork')
+except:
+    pass
+
 import contextlib, tempfile, os, shutil, sys
 import datahook
 

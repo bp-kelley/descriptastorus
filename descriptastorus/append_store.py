@@ -35,7 +35,7 @@ from rdkit.Chem import AllChem
 import pickle
 import time, os, sys, numpy, shutil
 import logging
-from .make_store import process, processInchi, getJobsAndNames, getJobs, props
+from .make_store import process, processInchi, getJobsAndNames, getJobs, init_from_store
 import multiprocessing, traceback
 from io import StringIO
 
@@ -101,11 +101,6 @@ def append_smiles_file(src, dest, hasHeader):
 # not thread safe!
 def append_smiles(options):
     # ugly
-    while props:
-        props.pop()
-        
-    # to test molecule
-    
     # make the storage directory
     if not os.path.exists(options.storage):
         raise IOError("Directory for descriptastorus does not exist: %s"%options.storage)
@@ -114,8 +109,7 @@ def append_smiles(options):
         storageOptions = pickle.load(f)
     dbdir = options.storage
     d = DescriptaStore(dbdir, mode=Mode.READONLY)
-    props.append( d.getDescriptorCalculator() )
-    properties = props[0]
+    properties = d.getDescriptorCalculator()
 
     if d.inchikey and not kyotocabinet:
         logging.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet")
@@ -147,7 +141,7 @@ def append_smiles(options):
         # never use more than the maximum number
         num_cpus = min(int(options.numprocs), multiprocessing.cpu_count())
             
-    pool = multiprocessing.Pool(num_cpus)
+    pool = multiprocessing.Pool(num_cpus, initializer=init_from_store, initargs=(options.storage,))
         
     sm = MolFileIndex.MakeSmilesIndex(orig_filename, indexdir,
                                       sep=options.seperator,
@@ -274,12 +268,6 @@ def append_smiles(options):
 
 # not thread safe!
 def append_store(options):
-    # ugly
-    while props:
-        props.pop()
-        
-    # to test molecule
-    
     # make the storage directory
     if not os.path.exists(options.storage):
         raise IOError("Directory for descriptastorus does not exist: %s"%options.storage)
@@ -288,8 +276,7 @@ def append_store(options):
         storageOptions = pickle.load(f)
     dbdir = options.storage
     d = DescriptaStore(dbdir, mode=Mode.READONLY)
-    props.append( d.getDescriptorCalculator() )
-    properties = props[0]
+    propertites = d.getDescriptorCalculator()
 
     if d.inchikey and not kyotocabinet:
         logging.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet")

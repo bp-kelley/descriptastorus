@@ -7,6 +7,13 @@ from descriptastorus.descriptors.DescriptorGenerator import DescriptorGenerator
 import contextlib, tempfile, os, shutil, sys
 import datahook
 
+try:
+    if sys.platform == 'darwin':
+        import multiprocessing
+        multiprocessing.set_start_method('fork')
+except:
+    pass
+
 one_smiles = "c1ccccc1 0"
 many_smiles = "\n".join( [ "C"*i + "c1ccccc1 " + str(i) for i in range(10) ] )
 
@@ -27,7 +34,10 @@ class Canonicalize(DescriptorGenerator):
         
 c = Canonicalize()
 
+SKIP_MP = not (__name__ == "__main__" or sys.platform not in ['darwin', 'windows'])
+
 class TestCase(unittest.TestCase):
+    #@unittest.skipIf(SKIP_MP, 'Need __name__ == "__main__" for darwin or windows')
     def testCanonicalSmiles(self):
         try:
             fname = tempfile.mktemp()+".smi"
@@ -57,7 +67,8 @@ class TestCase(unittest.TestCase):
                 os.unlink(fname)
             if os.path.exists(storefname):
                 shutil.rmtree(storefname)
-                
+
+    #@unittest.skipIf(SKIP_MP, 'Need __name__ == "__main__" for darwin or windows')    
     def testCanonicalSmiles2(self):
         try:
             fname = tempfile.mktemp()+".smi"
@@ -85,3 +96,7 @@ class TestCase(unittest.TestCase):
                 os.unlink(fname)
             if os.path.exists(storefname):
                 shutil.rmtree(storefname)
+
+if __name__ == '__main__':
+    unittest.main()
+    

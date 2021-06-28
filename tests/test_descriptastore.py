@@ -8,6 +8,13 @@ import logging, struct
 import contextlib, tempfile, os, shutil, sys, shutil
 import datahook
 
+try:
+    if sys.platform == 'darwin':
+        import multiprocessing
+        multiprocessing.set_start_method('fork')
+except:
+    pass
+
 logging.getLogger().setLevel(logging.DEBUG)
 
 one_smiles = "c1ccccc1 0"
