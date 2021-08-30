@@ -48,3 +48,5 @@ class TestCase(unittest.TestCase):
             if os.path.exists(storefname):
                 shutil.rmtree(storefname)
 
+if __name__ == '__main__':  #pragma: no cover
+    unittest.main()

@@ -61,6 +61,14 @@ class DescriptaStoreIter:
             raise
     def next(self):
         return self.__next__(self)
+
+def get_options(dbdir):
+    optionsfile = os.path.join(dbdir, "__options__")
+    if os.path.exists(optionsfile):
+        with open(optionsfile, 'rb') as f:
+            return pickle.load(f)
+    else:
+        raise IOError("Not a valid Descriptastore, no options file")
     
 class DescriptaStore:
     def __init__(self, dbdir, mode=Mode.READONLY):
@@ -92,13 +100,7 @@ class DescriptaStore:
         self.desctiporDB = dbdir
         self.db = raw.RawStore(dbdir, mode=mode)
         self.index = MolFileIndex.MolFileIndex(os.path.join(dbdir, "__molindex__"))
-        options = self.options = None
-        optionsfile = os.path.join(dbdir, "__options__")
-        if os.path.exists(optionsfile):
-            with open(optionsfile, 'rb') as f:
-                options = self.options = pickle.load(f)
-        else:
-            raise IOError("Not a valid Descriptastore, no options file")
+        options = self.options = get_options(dbdir)
         keystore = options.get("keystore", "kyotostore")
         
         key_store_type = None

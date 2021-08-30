@@ -39,6 +39,7 @@ import time, os, sys, numpy, shutil
 import logging
 from descriptastorus import MolFileIndex, raw
 from .keyvalue import KeyValueAPI
+from .DescriptaStore import get_options
 import tqdm
 
 # args.storage
@@ -74,8 +75,30 @@ class MakeStorageOptions:
             logging.warning("%s: ignoring extra keywords: %r", self.__class__.__name__, kw)
 
 # ugly multiprocessing nonesense
-#  this makes this really not threadsafe
-props = []
+#  this initialized the property lists, must be called
+#  prior to making the store
+PROPS = []
+def init_props(descriptors):
+    global PROPS
+    PROPS.clear()
+    PROPS.append(MakeGenerator(descriptors.split(",")) )
+    return PROPS
+
+def init_props_from_store(dbdir):
+    global PROPS
+    options = get_options(dbdir)
+    generator = MakeGenerator(options['descriptors'].split(","))
+    PROPS.clear()
+    PROPS.append( generator )
+    return PROPS
+
+def is_empty(result):
+    if result is None:
+        return True
+    elif type(result) == list:
+        return len(result) == 0
+    
+    return result.shape == 0
 
 def process( job ):
     if job:
@@ -87,15 +110,16 @@ def process( job ):
     res = []
     try:
         smiles = [s for _,s in job]
-        _, results = props[0].processSmiles(smiles)
+        _, results = PROPS[0].processSmiles(smiles)
+
         if len(smiles) != len(results):
             logging.error("Failed batch from index %s to %s"%(
                 job[0][0], job[-1][0]))
             return []
                           
-
         return tuple(((index, result)
-                      for (index,smiles), result in zip(job, results) if result))
+                      for (index,smiles), result in zip(job, results) if not is_empty(result)))
+    
     except Exception as x:
         import traceback
         traceback.print_exc()
@@ -112,7 +136,7 @@ def processInchi( job ):
     res = []
     try:
         smiles = [s for _,s in job]
-        mols, results = props[0].processSmiles(smiles)
+        mols, results = PROPS[0].processSmiles(smiles)
         if len(smiles) != len(results):
             logging.error("Failed batch from index %s to %s"%(
                 job[0][0], job[-1][0]))
@@ -120,7 +144,7 @@ def processInchi( job ):
         
         for i, ((index, smiles), result) in enumerate(zip(job, results)):
             m = mols[i]
-            if result:
+            if not is_empty(result):
                 inchi = AllChem.MolToInchi(m)
                 key = AllChem.InchiToInchiKey(inchi)
                 res.append((index, result, inchi, key))
@@ -169,11 +193,7 @@ def getJobs(molindex, options, start, end, batchsize, nprocs):
 
 # not thread safe!
 def make_store(options):
-    while props:
-        props.pop()
-        
-    props.append( MakeGenerator(options.descriptors.split(",")) )
-    properties = props[0]
+    properties = init_props(options.descriptors)[0]
     # to test molecule
     
     inchiKey = options.index_inchikey
@@ -195,7 +215,9 @@ def make_store(options):
         # never use more than the maximum number
         num_cpus = min(int(options.numprocs), multiprocessing.cpu_count())
             
-    pool = multiprocessing.Pool(num_cpus)
+    pool = multiprocessing.Pool(num_cpus,
+                                initializer=init_props,
+                                initargs=(options.descriptors,))
 
     os.mkdir(options.storage)
     with open(os.path.join(options.storage, "__options__"), 'wb') as f:
@@ -284,7 +306,7 @@ def make_store(options):
                 for result in flattened:
                     if options.index_inchikey:
                         i,v,inchi,key = result
-                        if v:
+                        if not is_empty(v):
                             try:
                                 s.putRow(i, v)
                             except ValueError:
@@ -299,7 +321,7 @@ def make_store(options):
 
                     else:
                         i,v = result
-                        if v:
+                        if not is_empty(v):
                             s.putRow(i, v)
 
                 storeTime = time.time() - t1

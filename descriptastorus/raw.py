@@ -119,7 +119,7 @@ class RawStore:
             self.f = mmap.mmap(self._f.fileno(), 0, access=access)
         else:
             self._f = self.f
-        
+
     def close(self):
         self.f.close()
         self._f.close()
@@ -491,7 +491,7 @@ def MakeStore(cols, N, directory, checkDirectoryExists=True):
         elif dtype == numpy.float64:
             type = "d"
             dtypes.append(float)
-        elif dtype == numpy.bool:
+        elif dtype == bool:
             type = "?"
             dtypes.append(bool)
         elif hasattr(dtype, 'type'): # for strings

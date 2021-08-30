@@ -82,6 +82,8 @@ class TestCase(unittest.TestCase):
             if os.path.exists(storefname):
                 shutil.rmtree(storefname)
 
+                
+
     def testAppendStore(self):
         fname = tempfile.mktemp()+".smi"
         fname2 = tempfile.mktemp()+"2.smi"

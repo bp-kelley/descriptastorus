@@ -38,6 +38,8 @@ class TestCase(unittest.TestCase):
             with contextlib.closing(DescriptaStore(storefname)) as store:
                 for i in range(10):
                     r = store.descriptors().get(i)
+                    if r != expected_chiral_data[i]:
+                        asdf
                     self.assertEqual(r, expected_chiral_data[i])
                     
                 
@@ -64,6 +66,13 @@ class TestCase(unittest.TestCase):
             with contextlib.closing(DescriptaStore(storefname)) as store:
                 for i in range(10):
                     r = store.descriptors().get(i)
+                    if r != expected_chiral_data[i]:
+                        print(i)
+                        print(r)
+                        print("*"*33)
+                        print(expected_chiral_data[i])
+                        asdf
+
                     self.assertEqual(r, expected_chiral_data[i])
                 
         finally:
@@ -141,7 +150,12 @@ class TestCase(unittest.TestCase):
             with contextlib.closing(DescriptaStore(storefname)) as store:
                 for i in range(4):
                     r = store.descriptors().get(i)
-                    #print(r)
+                    if r !=  expected_FeatureMorgan_data[i]:
+                        print(i)
+                        print(r)
+                        print(expected_FeatureMorgan_data[i])
+                        asdf
+                    #print(r)expected_FeatureMorgan_data[i]
                     self.assertEqual(r, expected_FeatureMorgan_data[i])
                 
         finally:
@@ -150,3 +164,5 @@ class TestCase(unittest.TestCase):
             if os.path.exists(storefname):
                 shutil.rmtree(storefname)
 
+if __name__ == '__main__':  #pragma: no cover
+    unittest.main()
