@@ -51,9 +51,9 @@ for name, (dist, params, minV,maxV,avg,std) in dists.dists.items():
     
     cdfs[name] = cdf
 
-for name in rdDescriptors.FUNCS:
-    if name not in cdfs:
-        logging.warning("No normalization for %s", name)
+#for name in rdDescriptors.FUNCS:
+#    if name not in cdfs:
+#        logging.warning("No normalization for %s", name)
 
 def applyNormalizedFunc(name, m):
     if name not in cdfs:
