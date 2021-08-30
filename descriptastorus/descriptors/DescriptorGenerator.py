@@ -36,9 +36,7 @@ import pandas_flavor as pf
 import sys
 import numpy as np
 # set to 0 to disable caching
-MAX_CACHE = 1000
-
-ZERO_DEPTH_BASES = (str, bytes, Number, range, bytearray)
+MAX_CACHE = 0
 
 class DescriptorGenerator:
     REGISTRY = {}
