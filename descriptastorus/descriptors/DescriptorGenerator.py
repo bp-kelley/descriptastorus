@@ -36,7 +36,7 @@ import pandas_flavor as pf
 import sys
 import numpy as np
 # set to 0 to disable caching
-MAX_CACHE = 0
+MAX_CACHE = 1000
 
 class DescriptorGenerator:
     REGISTRY = {}
@@ -207,13 +207,12 @@ class DescriptorGenerator:
         # none cached
         elif len(_results) == 0:
             results = self.processMols(mols, goodsmiles, internalParsing=True)
-
             if MAX_CACHE:
                 if len(indices) == len(smiles):
                     for smile, res, m in zip(smiles, results, allmols):
                         self.cache[smile] = res, m
-                    
-                return mols, results
+
+                    return mols, results
 
             # default values are None
             all_results = [None] * len(smiles)
