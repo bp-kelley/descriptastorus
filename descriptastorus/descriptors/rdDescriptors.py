@@ -273,8 +273,8 @@ class RDKitFPUnbranched(DescriptorGenerator):
         self.columns += ap
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        return clip_sparse(Chem.RDKFingerprint(m, minPath=self.minPathLen, branchedPaths=False,
-                                          maxPath=self.maxPathLen, fpSize=self.nbits),
+        return to_np(Chem.RDKFingerprint(m, minPath=self.minPathLen, branchedPaths=False,
+                                         maxPath=self.maxPathLen, fpSize=self.nbits),
                     self.nbits)
 
 

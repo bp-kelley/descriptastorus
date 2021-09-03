@@ -38,9 +38,9 @@ import numpy as np
 # set to 0 to disable caching
 MAX_CACHE = 1000
 
-def not_empty(array):
+def is_empty(array):
     if hasattr(array, "size"):
-        return a.size > 0
+        return array.size == 0
     return not array
     
 class DescriptorGenerator:
@@ -179,7 +179,7 @@ class DescriptorGenerator:
         if MAX_CACHE:
             for i,smile in enumerate(smiles):
                 res,m = self.cache.get(smile, (None, None))
-                if not_empty(res):
+                if not is_empty(res):
                     _results.append((i, res))
                     if keep_mols:
                         allmols.append(m)
