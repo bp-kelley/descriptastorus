@@ -33,11 +33,42 @@ from rdkit import Chem
 import logging, numpy, sys
 import pandas as pd
 import pandas_flavor as pf
-
+import sys
+import numpy as np
 # set to 0 to disable caching
-MAX_CACHE = 10000
-cache_hit = 0
-cache_miss = 0
+MAX_CACHE = 0
+
+import sys
+from numbers import Number
+from collections import deque
+from collections.abc import Set, Mapping
+
+
+ZERO_DEPTH_BASES = (str, bytes, Number, range, bytearray)
+
+
+def getsize(obj_0):
+    """Recursively iterate to sum size of object & members."""
+    _seen_ids = set()
+    def inner(obj):
+        obj_id = id(obj)
+        if obj_id in _seen_ids:
+            return 0
+        _seen_ids.add(obj_id)
+        size = sys.getsizeof(obj)
+        if isinstance(obj, ZERO_DEPTH_BASES):
+            pass # bypass remaining control flow and return
+        elif isinstance(obj, (tuple, list, Set, deque)):
+            size += sum(inner(i) for i in obj)
+        elif isinstance(obj, Mapping) or hasattr(obj, 'items'):
+            size += sum(inner(k) + inner(v) for k, v in getattr(obj, 'items')())
+        # Check for custom object instances - may subclass above too
+        if hasattr(obj, '__dict__'):
+            size += inner(vars(obj))
+        if hasattr(obj, '__slots__'): # can have __slots__ with __dict__
+            size += sum(inner(getattr(obj, s)) for s in obj.__slots__ if hasattr(obj, s))
+        return size
+    return inner(obj_0)
 
 class DescriptorGenerator:
     REGISTRY = {}
@@ -52,6 +83,8 @@ class DescriptorGenerator:
         #  GetColumns returns more columns here.
         self.columns = []
         self.cache = {}
+        self.cache_hit = 0
+        self.cache_miss = 0
         
     def molFromSmiles(self, smiles):
         """Prepare a smiles to a molecule"""
@@ -82,17 +115,6 @@ class DescriptorGenerator:
         The first value returned is always True to indicate that the
         descriptors have actually been set in the store
         """
-        global cache_hit, cache_miss
-        # let's keep us from exploding
-        if len(self.cache) > MAX_CACHE:
-            self.cache.clear()
-
-        res,_ = self.cache.get(smiles, (None,None))
-        if res is not None:
-            cache_hit += 1
-            return res
-
-        cache_miss += 1
         if not internalParsing:
             m = self.molFromMol(m)
 
@@ -119,10 +141,16 @@ class DescriptorGenerator:
                         res[idx] = columns[idx][1]() # default value here
 
             logging.info("res %r", res)
-            res.insert(0, False)
+            if type(res) == list:
+                res.insert(0, False)
+            else:
+                np.insert(res, 0, 3)
         else:
-            res.insert(0, True)
-        self.cache[smiles] = res, m
+            if type(res) == list:
+                res.insert(0, True)
+            else:
+                np.insert(res, 0, -1)
+
         return res
     
     def processMols(self, mols, smiles, internalParsing=False):
@@ -174,14 +202,24 @@ class DescriptorGenerator:
         indices = []
         goodsmiles = []
         _results = []
-        
-        for i,smile in enumerate(smiles):
-            res,m = self.cache.get(smile, (None, None))
-            if res:
-                _results.append((i, res))
-                if keep_mols:
-                    allmols.append(m)
-            else:
+
+        if MAX_CACHE:
+            for i,smile in enumerate(smiles):
+                res,m = self.cache.get(smile, (None, None))
+                if res:
+                    _results.append((i, res))
+                    if keep_mols:
+                        allmols.append(m)
+                else:
+                    m = self.molFromSmiles(smile)
+                    if m:
+                        mols.append(m)
+                        indices.append(i)
+                        goodsmiles.append(smile)
+                    if keep_mols:
+                        allmols.append(m)
+        else:
+            for i,smile in enumerate(smiles):
                 m = self.molFromSmiles(smile)
                 if m:
                     mols.append(m)
@@ -189,7 +227,10 @@ class DescriptorGenerator:
                     goodsmiles.append(smile)
                 if keep_mols:
                     allmols.append(m)
-
+                        
+        if len(smiles) + len(self.cache) > MAX_CACHE:
+            self.cache.clear()
+            
         # all cached
         if len(_results) == len(smiles):
             all_results = [r[1] for r in _results]
@@ -198,10 +239,11 @@ class DescriptorGenerator:
         # none cached
         elif len(_results) == 0:
             results = self.processMols(mols, goodsmiles, internalParsing=True)
-            
-            if len(indices) == len(smiles):
-                for smile, res, m in zip(smiles, results, allmols):
-                    self.cache[smile] = res, m
+
+            if MAX_CACHE:
+                if len(indices) == len(smiles):
+                    for smile, res, m in zip(smiles, results, allmols):
+                        self.cache[smile] = res, m
                     
                 return mols, results
 
@@ -221,7 +263,8 @@ class DescriptorGenerator:
 
             # grab processed
             for idx,result,m in zip(indices, results, allmols):
-                self.cache[smiles[idx]] = result,m
+                if MAX_CACHE:
+                    self.cache[smiles[idx]] = result,m
                 all_results[idx] = result
             return allmols, all_results
 
