@@ -34,17 +34,21 @@ from rdkit import Chem
 from rdkit.Chem import Descriptors
 from rdkit.Chem import rdMolDescriptors as rd
 import numpy
+from rdkit.DataStructs import ConvertToNumpyArray
 from .DescriptorGenerator import DescriptorGenerator
 import logging
 
 import sys
 
-def clip(v, name):
-    if v > 255:
-        logging.warning("%s has >255 counts for a feature vector clipping", name)
-        v = 255
-    return v
-        
+def to_np(vect, nbits):
+    arr = numpy.zeros((nbits, ), 'i')
+    return ConvertToNumpyArray(vect, arr)
+
+def clip_sparse(vect, nbits):
+    l = [0]*nbits
+    for i,v in vect.GetNonzeroElements().items():
+        l[i] = v if v > 255 else 255
+    return l
 
 class Morgan(DescriptorGenerator):
     """Computes Morgan3 bitvector counts"""
@@ -63,8 +67,8 @@ class Morgan(DescriptorGenerator):
         self.columns += morgan
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = list(rd.GetMorganFingerprintAsBitVect(m,
-                                                       radius=self.radius, nBits=self.nbits))
+        counts = to_np(rd.GetMorganFingerprintAsBitVect(m,
+                                                        radius=self.radius, nBits=self.nbits), self.nbits)
         return counts        
 
 Morgan()
@@ -86,10 +90,10 @@ class MorganCounts(DescriptorGenerator):
         self.columns += morgan
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = list(rd.GetHashedMorganFingerprint(m,
-                                                    radius=self.radius, nBits=self.nbits))
-        counts = [ clip(x,smiles) for x in counts ]
-        return counts        
+        v = rd.GetHashedMorganFingerprint(m,
+                                          radius=self.radius, nBits=self.nbits)
+        return clip_sparse(v, self.nbits)
+
 
 MorganCounts()
 
@@ -110,8 +114,8 @@ class ChiralMorgan(DescriptorGenerator):
         self.columns += morgan
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        return list(rd.GetMorganFingerprint(
-            m, radius=self.radius, nBits=self.nbits, useChirality=True))
+        return to_np(rd.GetMorganFingerprint(
+            m, radius=self.radius, nBits=self.nbits, useChirality=True), self.nbits)
 
 ChiralMorgan()
 
@@ -132,10 +136,9 @@ class ChiralMorganCounts(DescriptorGenerator):
         self.columns += morgan
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = list(rd.GetHashedMorganFingerprint(
-            m, radius=self.radius, nBits=self.nbits, useChirality=True))
-        counts = [ clip(x,smiles) for x in counts ]
-        return counts        
+        return clip_sparse(rd.GetHashedMorganFingerprint(
+            m, radius=self.radius, nBits=self.nbits, useChirality=True),
+                    self.nbits)
 
 ChiralMorganCounts()
 
@@ -156,8 +159,8 @@ class FeatureMorgan(DescriptorGenerator):
         self.columns += morgan
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        return list(rd.GetMorganFingerprintAsBitVect(
-            m, radius=self.radius, nBits=self.nbits, invariants=rd.GetFeatureInvariants(m)))
+        return to_np(rd.GetMorganFingerprintAsBitVect(
+            m, radius=self.radius, nBits=self.nbits, invariants=rd.GetFeatureInvariants(m)), self.nbits)
 
 
 FeatureMorgan()
@@ -180,10 +183,9 @@ class FeatureMorganCounts(DescriptorGenerator):
         self.columns += morgan
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = list(rd.GetHashedMorganFingerprint(
-            m, radius=self.radius, nBits=self.nbits, invariants=rd.GetFeatureInvariants(m)))
-        counts = [ clip(x,smiles) for x in counts ]
-        return counts        
+        return clip_sparse(rd.GetHashedMorganFingerprint(
+            m, radius=self.radius, nBits=self.nbits, invariants=rd.GetFeatureInvariants(m)),
+                    self.nbits)
 
 FeatureMorganCounts()
 
@@ -203,8 +205,8 @@ class AtomPair(DescriptorGenerator):
         self.columns += ap
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        return list(rd.GetAtomPairFingerprint(m, minLength=self.minPathLen, 
-                                                      maxLength=self.maxPathLen, nBits=self.nbits))
+        return to_np(rd.GetAtomPairFingerprint(m, minLength=self.minPathLen, 
+                                               maxLength=self.maxPathLen, nBits=self.nbits), self.nbits)
 
 
 AtomPair()
@@ -225,17 +227,16 @@ class AtomPairCounts(DescriptorGenerator):
         self.columns += ap
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = list(rd.GetHashedAtomPairFingerprint(m, minLength=self.minPathLen, 
-                                                      maxLength=self.maxPathLen, nBits=self.nbits))
-        counts = [ clip(x,smiles) for x in counts ]
-        return counts        
+        return  clip_sparse(rd.GetHashedAtomPairFingerprint(m, minLength=self.minPathLen, 
+                                                            maxLength=self.maxPathLen, nBits=self.nbits),
+                            self.nbits)
 
 AtomPairCounts()
 
 class RDKitFPBits(DescriptorGenerator):
     """Computes RDKitFp bitvector"""
     NAME = "RDKitFPBits"
-    def __init__(self, minPathLen=1, maxPathLen=7, nbits=2048, clip=clip):
+    def __init__(self, minPathLen=1, maxPathLen=7, nbits=2048):
         if minPathLen != 1 or maxPathLen != 7 or nbits != 2048:
           self.NAME = self.NAME + ("%s-%s-%s"%(minPathLen,maxPathLen,nbits))
             
@@ -248,10 +249,10 @@ class RDKitFPBits(DescriptorGenerator):
         self.columns += ap
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = list(Chem.RDKFingerprint(m, minPath=self.minPathLen, 
-                                          maxPath=self.maxPathLen, fpSize=self.nbits))
-        counts = [ clip(x,smiles) for x in counts ]
-        return counts        
+        return clip_sparse(Chem.RDKFingerprint(m, minPath=self.minPathLen, 
+                                          maxPath=self.maxPathLen, fpSize=self.nbits),
+                    self.nbits)
+
 
 RDKitFPBits()
 
@@ -272,10 +273,10 @@ class RDKitFPUnbranched(DescriptorGenerator):
         self.columns += ap
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = list(Chem.RDKFingerprint(m, minPath=self.minPathLen, branchedPaths=False,
-                                          maxPath=self.maxPathLen, fpSize=self.nbits))
-        counts = [ clip(x,smiles) for x in counts ]
-        return counts        
+        return clip_sparse(Chem.RDKFingerprint(m, minPath=self.minPathLen, branchedPaths=False,
+                                          maxPath=self.maxPathLen, fpSize=self.nbits),
+                    self.nbits)
+
 
 RDKitFPUnbranched()
 
