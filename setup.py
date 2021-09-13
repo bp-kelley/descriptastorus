@@ -59,14 +59,15 @@ if not status:
     except:
         raise RunTimeError("git tags must be in the form release-x.y.z or simply x.y.z")
 else:
-  VERSION="2.2.0" # hardcode version
+  print('descriptastorus requires git to get the versioning info, please install git', file=sys.stderr)
+  sys.exit(1)
 
 setup(name='descriptastorus',
       version=VERSION,
       description='Descriptor storage and molecular file indexing',
       author='Brian Kelley',
-      author_email='brian.kelley@novartis.com',
-      url='https://bitbucket.org/novartisnibr/rdkit-descriptastorus/',
+      author_email='bkelley@relaytx.com',
+      url='https://github/bp-kelley/descriptastorus',
       install_requires=['pandas_flavor'],
       test_suite='nose.collector',
       tests_require=['nose', 'pandas_flavor'],
