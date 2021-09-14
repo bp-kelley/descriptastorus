@@ -2,6 +2,7 @@ from __future__ import print_function
 import unittest
 from rdkit.Chem import AllChem
 import numpy, math
+from rdkit.DataStructs import IntSparseIntVect
 from descriptastorus import make_store, DescriptaStore
 from descriptastorus.descriptors import rdDescriptors, DescriptorGenerator
 import contextlib, tempfile, os, shutil, sys
@@ -163,6 +164,16 @@ class TestCase(unittest.TestCase):
                 os.unlink(fname)
             if os.path.exists(storefname):
                 shutil.rmtree(storefname)
+
+    def test_clip(self):
+        nbits = 2048
+        v = IntSparseIntVect(2048)
+        for i in range(nbits):
+            v[i] = i
+            
+        l = rdDescriptors.clip_sparse(v, 2048)
+        for i,v in enumerate(l):
+            assert v == min(i,255)
 
 if __name__ == '__main__':  #pragma: no cover
     unittest.main()
