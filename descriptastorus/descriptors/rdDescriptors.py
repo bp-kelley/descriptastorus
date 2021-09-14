@@ -1,4 +1,4 @@
-#  Copyright (c) 2018, Novartis Institutes for BioMedical Research Inc.
+#  Copyright (c) 2018-2021, Novartis Institutes for BioMedical Research Inc.
 #  All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,7 @@ from rdkit import Chem
 from rdkit.Chem import Descriptors
 from rdkit.Chem import rdMolDescriptors as rd
 import numpy
+from rdkit.DataStructs import IntSparseIntVect
 from rdkit.DataStructs import ConvertToNumpyArray
 from .DescriptorGenerator import DescriptorGenerator
 import logging
@@ -47,7 +48,7 @@ def to_np(vect, nbits):
 def clip_sparse(vect, nbits):
     l = [0]*nbits
     for i,v in vect.GetNonzeroElements().items():
-        l[i] = v if v > 255 else 255
+        l[i] = min(v, 255)
     return l
 
 class Morgan(DescriptorGenerator):
@@ -227,9 +228,9 @@ class AtomPairCounts(DescriptorGenerator):
         self.columns += ap
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        return  clip_sparse(rd.GetHashedAtomPairFingerprint(m, minLength=self.minPathLen, 
-                                                            maxLength=self.maxPathLen, nBits=self.nbits),
-                            self.nbits)
+        return clip_sparse(rd.GetHashedAtomPairFingerprint(m, minLength=self.minPathLen, 
+                                                           maxLength=self.maxPathLen, nBits=self.nbits),
+                           self.nbits)
 
 AtomPairCounts()
 
