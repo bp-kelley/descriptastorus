@@ -43,7 +43,8 @@ import sys
 
 def to_np(vect, nbits):
     arr = numpy.zeros((nbits, ), 'i')
-    return ConvertToNumpyArray(vect, arr)
+    ConvertToNumpyArray(vect, arr)
+    return arr
 
 def clip_sparse(vect, nbits):
     l = [0]*nbits
