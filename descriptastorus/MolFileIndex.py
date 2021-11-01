@@ -38,6 +38,8 @@ import csv
 from io import StringIO
 import functools
 
+logger = logging.getLogger("descriptastorus")
+
 def SDFNameGetter(buffer):
     return buffer.split("\n")[0].strip()
 
@@ -114,7 +116,7 @@ class MolFileIndex:
                 csv.register_dialect('custom_dialect', delimiter=self.sep, skipinitialspace=True)
                 self.reader = functools.partial(reader, dialect='custom_dialect')
         except:
-            logging.exception("Can't initialize delimiter: %s", self.sep)
+            logger.exception("Can't initialize delimiter: %s", self.sep)
             
 
         self.nameFxn = namefxns[self.nameFxnName]
@@ -209,7 +211,7 @@ class MolFileIndex:
             if self.smilesColumn != -1:
                 return list(self.reader(buf))[0]#buf.split(self.sep)
         except:
-            logging.exception("Whups, can't split")
+            logger.exception("Whups, can't split")
             raise
         return buf
 
@@ -321,11 +323,11 @@ def MakeSmilesIndex(filename, dbdir, hasHeader, smilesColumn, nameColumn=-1, sep
                        checkDirectoryExists=(not reIndex))
     cpfile = targetFilename
     if not reIndex:
-        logging.info("Copying molecule file to index...")
+        logger.info("Copying molecule file to index...")
         shutil.copy(filename, cpfile)
-        logging.info("Done copying")
+        logger.info("Done copying")
     else:
-        logging.info("Reindexing existing smiles file...")
+        logger.info("Reindexing existing smiles file...")
         
     options = {'filename': os.path.basename(filename),
                'hasHeader': hasHeader,
@@ -342,7 +344,7 @@ def MakeSmilesIndex(filename, dbdir, hasHeader, smilesColumn, nameColumn=-1, sep
     
     # first row
     #  TODO sniff newline...
-    logging.info("Indexing...")
+    logger.info("Indexing...")
     db.putRow(0, [0])
     for i,pos in enumerate(index(cpfile, b"\n")):
         db.putRow(i+1, [pos+1])

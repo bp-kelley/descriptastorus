@@ -34,6 +34,7 @@ from collections import namedtuple
 import scipy.stats as st
 import numpy as np
 import logging
+logger = logging.getLogger("descriptastorus")
 
 cdfs = {}
 
@@ -53,7 +54,7 @@ for name, (dist, params, minV,maxV,avg,std) in dists.dists.items():
 
 for name in rdDescriptors.FUNCS:
     if name not in cdfs:
-        logging.warning("No normalization for %s", name)
+        logger.warning("No normalization for %s", name)
 
 def applyNormalizedFunc(name, m):
     if name not in cdfs:
@@ -61,7 +62,7 @@ def applyNormalizedFunc(name, m):
     try:
         return cdfs[name](rdDescriptors.applyFunc(name,m))
     except:
-        logging.exception("Could not compute %s for molecule", name)
+        logger.exception("Could not compute %s for molecule", name)
         return 0.0
 
 class RDKit2DNormalized(rdDescriptors.RDKit2D):

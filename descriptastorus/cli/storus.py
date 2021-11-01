@@ -77,7 +77,7 @@ parser.add_argument("--verbose",  action="store_true",
 def main():
     opts = parser.parse_args()
     if opts.verbose:
-        logging.getLogger().setLevel(logging.INFO)
+        logging.getLogger("descriptastorus").setLevel(logging.INFO)
 
     if opts.append and opts.append_store:
         logging.error("Use one of --append --append-store")

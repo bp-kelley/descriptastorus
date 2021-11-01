@@ -36,12 +36,13 @@ import os, sys, contextlib, pickle
 from .keyvalue import KeyValueAPI
 
 import logging
+logger = logging.getLogger("descriptastorus")
 
 try:
     from .descriptors import MakeGenerator
 except:
     MakeGenerator = None
-    logging.error("Unable to make new descriptors, descriptor generator not installed")
+    logger.error("Unable to make new descriptors, descriptor generator not installed")
 
 from .raw import Mode
 
@@ -105,7 +106,7 @@ class DescriptaStore:
         if keystore:
             key_store_type = KeyValueAPI.get_store(keystore)
             if not key_store_type:
-                logging.warning("Keystore %r not available, skipping", keystore)
+                logger.warning("Keystore %r not available, skipping", keystore)
 
         self.inchikey = self.name = None
         if key_store_type:
@@ -147,7 +148,7 @@ class DescriptaStore:
         try:
             return MakeGenerator(self.options['descriptors'].split(","))
         except:
-            logging.exception("Unable to make generator from store")
+            logger.exception("Unable to make generator from store")
             return None
 
     def getDescriptorNames(self, keepCalculatedFlags=False):
@@ -187,13 +188,13 @@ class DescriptaStore:
         """name -> returns the index of the given name"""
         if self.name is None:
             try:
-                logging.warning("Using slower memory intensive option")
-                logging.warning("Loading names...")
+                logger.warning("Using slower memory intensive option")
+                logger.warning("Loading names...")
                 self.name = {name:i for i, (moldata, name) in enumerate(self.index)}
-                logging.warning("...done loading")
+                logger.warning("...done loading")
                 print(self.name)
             except:
-                logging.exception("Names not available from original input")
+                logger.exception("Names not available from original input")
                 raise ValueError("Name index not available")
             assert self.name
 
