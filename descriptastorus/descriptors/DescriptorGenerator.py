@@ -184,9 +184,11 @@ class DescriptorGenerator:
                 res,m = self.cache.get(smile, (None, None))
                 if not is_empty(res):
                     _results.append((i, res))
+                    self.cache_hit += 1
                     if keep_mols:
                         allmols.append(m)
                 else:
+                    self.cache_miss += 1
                     m = self.molFromSmiles(smile)
                     if m:
                         mols.append(m)
