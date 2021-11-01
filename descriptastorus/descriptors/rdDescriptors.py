@@ -40,6 +40,7 @@ from .DescriptorGenerator import DescriptorGenerator
 import logging
 
 import sys
+logger = logging.getLogger("descriptastorus")
 
 def to_np(vect, nbits):
     arr = numpy.zeros((nbits, ), 'i')
@@ -333,7 +334,7 @@ def applyFunc(name, m):
     try:
         return FUNCS[name](m)
     except:
-        logging.exception("function application failed (%s->%s)",
+        logger.exception("function application failed (%s->%s)",
             name, Chem.MolToSmiles(m))
                        
         return None
@@ -354,7 +355,7 @@ class RDKit2D(DescriptorGenerator):
                 if name in sorted(FUNCS):
                     columns.append((name, numpy.float64))
                 else:
-                    logging.error("Unable to find specified property %s"%name)
+                    logger.error("Unable to find specified property %s"%name)
                     failed.append(name)
             if failed:
                 raise ValueError("%s: Failed to initialize: unable to find specified properties:\n\t%s"%(

@@ -35,6 +35,9 @@ import pandas as pd
 import pandas_flavor as pf
 import sys
 import numpy as np
+
+logger = logging.getLogger("descriptastorus")
+
 # set to 0 to disable caching
 MAX_CACHE = 1000
 
@@ -50,7 +53,7 @@ class DescriptorGenerator:
         try:
             self.REGISTRY[self.NAME.lower()] = self
         except:
-            logging.exception("DescriptorGenerator must have a NAME (self.NAME)")
+            logger.exception("DescriptorGenerator must have a NAME (self.NAME)")
             raise
         # the columns to be actually calculated
         #  GetColumns returns more columns here.
@@ -96,24 +99,24 @@ class DescriptorGenerator:
         #  for storage.
         res = self.calculateMol(m, smiles, internalParsing)
         if None in res:
-            logging.error("None in res")
+            logger.error("None in res")
             columns = self.GetColumns()
 
             for idx,v in enumerate(res):
                 if v is None:
                     if self.NAME:
-                        logging.error("At least one result: %s(%s) failed: %s",
+                        logger.error("At least one result: %s(%s) failed: %s",
                                       self.NAME,
                                       columns[idx+1][0],
                                       smiles)
                         res[idx] = columns[idx+1][1]() # default value here
                     else:
-                        logging.error("At least one result: %s failed: %s",
+                        logger.error("At least one result: %s failed: %s",
                                       columns[idx][0],
                                       smiles)
                         res[idx] = columns[idx][1]() # default value here
 
-            logging.info("res %r", res)
+            logger.info("res %r", res)
             if type(res) == list:
                 res.insert(0, False)
             else:
@@ -282,7 +285,7 @@ def MakeGenerator( generator_names ):
       :result: DescriptorGenerator
     """
     if not len(generator_names):
-        logging.warning("MakeGenerator called with no generator names")
+        logger.warning("MakeGenerator called with no generator names")
         raise ValueError("MakeGenerator called with no generator names")
     generators = []
     for name in generator_names:
@@ -290,7 +293,7 @@ def MakeGenerator( generator_names ):
             d = DescriptorGenerator.REGISTRY[name.lower()]
             generators.append(d)
         except:
-            logging.exception("No DescriptorGenerator found named %s\nCurrently registered descriptors:\n\t%s",
+            logger.exception("No DescriptorGenerator found named %s\nCurrently registered descriptors:\n\t%s",
                               name,
                               "\n\t".join(sorted(DescriptorGenerator.REGISTRY.keys()))
             )

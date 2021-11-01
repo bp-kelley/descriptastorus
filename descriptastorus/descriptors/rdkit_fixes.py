@@ -32,6 +32,7 @@ from rdkit.Chem import Descriptors
 from rdkit.Chem import rdMolDescriptors as _rdMolDescriptors
 
 import logging
+logger = logging.getLogger("descriptastorus")
 
 if not hasattr(Descriptors, "qed"):
     # fix missing internal descriptors
@@ -51,4 +52,4 @@ if not hasattr(Descriptors, "qed"):
     _descList.append( ("FpDensityMorgan1", FpDensityMorgan1) )
     _descList.append( ("FpDensityMorgan2", FpDensityMorgan1) )
     _descList.append( ("FpDensityMorgan3", FpDensityMorgan1) )
-    logging.info("Added missing QED, FpDensityMorgan1, FpDensityMorgan2, FpDensityMorgan3")
+    logger.info("Added missing QED, FpDensityMorgan1, FpDensityMorgan2, FpDensityMorgan3")

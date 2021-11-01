@@ -40,6 +40,8 @@ from .make_store import (process, processInchi, getJobsAndNames, getJobs,
 import multiprocessing, traceback
 from io import StringIO
 
+logger = logging.getLogger("descriptastorus")
+
 from descriptastorus import MolFileIndex, raw
 try:
     import kyotocabinet
@@ -114,7 +116,7 @@ def append_smiles(options):
     properties = d.getDescriptorCalculator()
 
     if d.inchikey and not kyotocabinet:
-        logging.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet")
+        logger.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet")
         return False
 
     d.close()
@@ -195,7 +197,7 @@ def append_smiles(options):
                 joblist, count = getJobs(sm, options, count, numstructs, batchsize, num_cpus)
                     
             if not joblist:
-                logging.debug("Stopping")
+                logger.debug("Stopping")
                 break
 
             t1 = time.time()
@@ -210,9 +212,9 @@ def append_smiles(options):
             for result in results:
                 if not badColumnWarning and len(result) == 0:
                     badColumnWarning = True
-                    logging.warning("no molecules processed in batch, check the smilesColumn")
-                    logging.warning("First 10 smiles:\n")
-                    logging.warning("\n".join(["%i: %s"%(i,sm.get(i)) for i in range(0, min(sm.N,10))]))
+                    logger.warning("no molecules processed in batch, check the smilesColumn")
+                    logger.warning("First 10 smiles:\n")
+                    logger.warning("\n".join(["%i: %s"%(i,sm.get(i)) for i in range(0, min(sm.N,10))]))
 
                 
             flattened = [val for sublist in results for val in sublist]
@@ -228,7 +230,7 @@ def append_smiles(options):
                         try:
                             s.putRow(i, v)
                         except ValueError:
-                            logging.exception("Columns: %s\nData: %r",
+                            logger.exception("Columns: %s\nData: %r",
                                               properties.GetColumns(),
                                               v)
                             raise
@@ -242,7 +244,7 @@ def append_smiles(options):
                         s.putRow(i, v)
                             
             storeTime = time.time() - t1
-            logging.info("Done with %s out of %s.  Processing time %0.2f store time %0.2f",
+            logger.info("Done with %s out of %s.  Processing time %0.2f store time %0.2f",
                 count, sm.N, procTime, storeTime)
 
         if d.inchikey:
@@ -254,18 +256,18 @@ def append_smiles(options):
                     cabinet.set(k, l)
                 else:
                     cabinet.set(k, inchies[k])
-            logging.info("... indexed in %2.2f seconds", (time.time()-t1))
+            logger.info("... indexed in %2.2f seconds", (time.time()-t1))
             
         if names:
             t1 = time.time()
             for name in sorted(names):
                 if name in name_cabinet or str.encode(name) in name_cabinet:
-                    logging.error("Name %s already exists in database,"
+                    logger.error("Name %s already exists in database,"
                                   " keeping idx %s (duplicate idx is %s)",
                                   name, name_cabinet[name], names[name])
                 else:
                     name_cabinet.set(name, names[name])
-            logging.info("... indexed in %2.2f seconds", (time.time()-t1))
+            logger.info("... indexed in %2.2f seconds", (time.time()-t1))
     finally:
         d.close()
         pool.close()
@@ -285,13 +287,13 @@ def append_store(options):
     properties = d.getDescriptorCalculator()
 
     if d.inchikey and not kyotocabinet:
-        logging.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet")
+        logger.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet")
         return False
 
     d.close()
     d2 = DescriptaStore(options.smilesfile, mode=Mode.READONLY)
     if d2.getDescriptorNames(True) != d.getDescriptorNames(True):
-        logging.error("Descriptors are not compatible between stores")
+        logger.error("Descriptors are not compatible between stores")
         return False
 
     

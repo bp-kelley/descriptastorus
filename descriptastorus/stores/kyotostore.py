@@ -1,6 +1,9 @@
 from ..keyvalue import KeyValueAPI
 from ..raw import Mode
 import logging, os
+
+logger = logging.getLogger("descriptastorus")
+
 try:
     import kyotocabinet
 
