@@ -1,0 +1,17 @@
+python:
+  - 3.6
+
+numpy:
+  - 1.12.1
+
+rdkit: 
+  - 2020.09.1.0
+
+scikit:
+  - 0.22
+
+pandas:
+  - 0.24.0
+
+pandasflavor:
+  - 0.2.0
