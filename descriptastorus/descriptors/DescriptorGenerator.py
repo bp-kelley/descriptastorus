@@ -1,3 +1,4 @@
+
 #  Copyright (c) 2018, Novartis Institutes for BioMedical Research Inc.
 #  All rights reserved.
 #
@@ -252,12 +253,16 @@ class DescriptorGenerator:
         raise NotImplementedError
         
 class Container(DescriptorGenerator):
+    # Note containers do NOT get stored in the registry
     def __init__(self, generators):
         self.generators = generators
         columns = self.columns = []
         for g in generators:
             columns.extend(g.GetColumns())
         self.cache = {}
+        self.cache_hit = 0
+        self.cache_miss = 0
+
 
     def processMol(self, m, smiles, internalParsing=False):
         results = []
