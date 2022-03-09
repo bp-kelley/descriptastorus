@@ -41,7 +41,7 @@ try:
     from .descriptors import MakeGenerator
 except:
     MakeGenerator = None
-    logging.error("Unable to make new descriptors, descriptor generator not installed")
+    logger.exception("Unable to make new descriptors, descriptor generator requirements not properly installed")
 
 from .raw import Mode
 
