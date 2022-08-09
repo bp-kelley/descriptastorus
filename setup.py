@@ -29,31 +29,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-import sys
 
-from setuptools import setup, find_packages
-from subprocess import getstatusoutput
-
-import logging
-
-status, output = getstatusoutput("git describe --tags")
-
-if not status:
-    try:
-        data = output.split("-")
-        if len(data) == 1:
-            VERSION = data[0]
-        elif data and data[0].lower() == "release":
-            VERSION = "%s.%s"%(data[1], data[2])
-        else:
-            VERSION = "%s.%s"%(data[0], data[1])
-    except:
-        raise RuntimeError("git tags must be in the form release-x.y.z or simply x.y.z")
-else:
-  VERSION="2.2.0" # hardcode version
+from setuptools import setup
 
 setup(name='descriptastorus',
-      version=VERSION,
+      version="2.4.0",
       description='Descriptor storage and molecular file indexing',
       author='Brian Kelley',
       author_email='brian.kelley@novartis.com',
