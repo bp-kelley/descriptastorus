@@ -30,7 +30,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='descriptastorus',
       version="2.4.0",
@@ -50,4 +50,3 @@ setup(name='descriptastorus',
           },
 
       packages = find_packages())
-
