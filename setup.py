@@ -33,14 +33,14 @@
 from setuptools import setup, find_packages
 
 setup(name='descriptastorus',
-      version="2.4.0",
+      version="2.4.1",
       description='Descriptor storage and molecular file indexing',
       author='Brian Kelley',
       author_email='brian.kelley@novartis.com',
       url='https://bitbucket.org/novartisnibr/rdkit-descriptastorus/',
-      install_requires=['pandas_flavor', 'rdkit'],
+      install_requires=['pandas', 'rdkit', 'scikit-learn'],
       test_suite='nose.collector',
-      tests_require=['nose', 'pandas_flavor'],
+      tests_require=['nose', 'pandas'],
       include_package_data=True,
       entry_points={
           'console_scripts': [
