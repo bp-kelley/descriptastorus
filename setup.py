@@ -29,47 +29,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-import sys
-try:
-  import rdkit
-except:
-  print("Descriptastorus requires rkdit to function, this is not installable by pip", file=sys.stderr)
-  print(" see https://rdkit.org for more information", file=sys.stderr)
-  sys.exit(1)
-  
+
 from setuptools import setup, find_packages
-try:
-  from commands import getstatusoutput
-except ImportError:
-  from subprocess import getstatusoutput
-
-import logging
-  
-status, output = getstatusoutput("git describe --tags")
-
-if not status:
-    try:
-        data = output.split("-")
-        if len(data) == 1:
-            VERSION = data[0]
-        elif data and data[0].lower() == "release":
-            VERSION = "%s.%s"%(data[1], data[2])
-        else:
-            VERSION = "%s.%s"%(data[0], data[1])
-    except:
-        raise RunTimeError("git tags must be in the form release-x.y.z or simply x.y.z")
-else:
-  VERSION="2.2.0" # hardcode version
 
 setup(name='descriptastorus',
-      version=VERSION,
+      version="2.4.2",
       description='Descriptor storage and molecular file indexing',
       author='Brian Kelley',
       author_email='brian.kelley@novartis.com',
       url='https://bitbucket.org/novartisnibr/rdkit-descriptastorus/',
-      install_requires=['pandas_flavor'],
+      install_requires=['pandas', 'rdkit', 'scikit-learn', "pandas-flavor"],
       test_suite='nose.collector',
-      tests_require=['nose', 'pandas_flavor'],
+      tests_require=['nose', 'pandas', "pandas-flavor"],
       include_package_data=True,
       entry_points={
           'console_scripts': [
@@ -77,6 +48,5 @@ setup(name='descriptastorus',
               'storus-validate = descriptastorus.cli.validate:main',
               ]
           },
-                                                            
-      packages = find_packages())
 
+      packages = find_packages())
