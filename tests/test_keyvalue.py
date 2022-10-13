@@ -4,6 +4,11 @@ from descriptastorus import keyvalue
 from descriptastorus.mode import Mode
 import logging, os, shutil, numpy, random, time
 
+try:
+    import kyotocabinet
+except:
+    kyotocabinet = None
+
 class TestKeyValue(unittest.TestCase):
     directory = "mydir5"
 
@@ -18,6 +23,7 @@ class TestKeyValue(unittest.TestCase):
             logging.info("tear down: Removing directory")
             shutil.rmtree(self.directory)
 
+    @unittest.skipUnless(kyotocabinet, "kyotocabinet is not available")
     def test_set_get_kyoto(self):
         store = keyvalue.KeyValueAPI.get_store("kyotostore")
         if store:

@@ -44,6 +44,8 @@ import pickle, numpy, os, mmap, struct, sys, shutil
 import logging
 import six
 
+logger = logging.getLogger("descriptastorus")
+
 # raw stores are little endian!
 
 class RawStoreIter:
@@ -119,7 +121,7 @@ class RawStore:
             self.f = mmap.mmap(self._f.fileno(), 0, access=access)
         else:
             self._f = self.f
-        
+
     def close(self):
         self.f.close()
         self._f.close()
@@ -149,12 +151,12 @@ class RawStore:
             raise ValueError("The value of M must be positive, not %r"%M)
         self.close()
         
-        logging.info("Seeking to %s",  self.rowbytes * (self.N + M))
+        logger.info("Seeking to %s",  self.rowbytes * (self.N + M))
         _f.seek(self.rowbytes * (self.N + M))
         _f.write(b'\0')
         self.N += M
         _f.close()
-        logging.info("Filesize is %s", os.path.getsize(self.fname))
+        logger.info("Filesize is %s", os.path.getsize(self.fname))
         self._resetSize()
 
     def append(self, raw):
@@ -186,8 +188,8 @@ class RawStore:
     def get(self, idx):
         """Return the row at idx"""
         if idx >= self.N or idx < 0:
-            raise IndexError("Index out of range %s (0 < %s)",
-                             idx, self.N)
+            raise IndexError("Index out of range %s (0 < %s)"%(
+                             idx, self.N))
         offset = idx * self.rowbytes
         try:
             self.f.seek(offset,0)
@@ -301,7 +303,7 @@ class RawStore:
                 yield v
             except struct.error:
                 if count != self.N:
-                    logging.exception("Bad Did not read %s entries got %s", self.N, count)
+                    logger.exception("Bad Did not read %s entries got %s", self.N, count)
                 if len(bytes) != nbytes:
                     raise StopIteration
                 raise
@@ -310,7 +312,7 @@ class RawStore:
                 self.f.seek(offset, os.SEEK_SET)
             except ValueError:
                 if count != self.N:
-                    logging.exception("Did not read %s entries got %s", self.N, count)
+                    logger.exception("Did not read %s entries got %s", self.N, count)
                 raise StopIteration
 
             
@@ -418,7 +420,7 @@ class RawStore:
         try:
             bytes = struct.pack(self.pack_format, *[convert_string(x) for x  in row])
         except struct.error:
-            logging.exception("Can't write row %r\ntypes: %r\nformat: %r",
+            logger.exception("Can't write row %r\ntypes: %r\nformat: %r",
                               row,
                               self.dtypes,
                               self.pack_format)
@@ -426,11 +428,11 @@ class RawStore:
         try:
             self.f.write(bytes)
         except Exception as e:
-            logging.error("Attempting to write to offset: %s", offset)
-            logging.error("Rowsize: %s", self.rowbytes)
-            logging.error("Row: %s", idx)
-            logging.error("Max Row: %s", self.N)
-            logging.error("Filesize is %s",
+            logger.error("Attempting to write to offset: %s", offset)
+            logger.error("Rowsize: %s", self.rowbytes)
+            logger.error("Row: %s", idx)
+            logger.error("Max Row: %s", self.N)
+            logger.error("Filesize is %s",
                            os.path.getsize(self.fname))
             raise
 
@@ -491,7 +493,7 @@ def MakeStore(cols, N, directory, checkDirectoryExists=True):
         elif dtype == numpy.float64:
             type = "d"
             dtypes.append(float)
-        elif dtype == numpy.bool:
+        elif dtype == bool:
             type = "?"
             dtypes.append(bool)
         elif hasattr(dtype, 'type'): # for strings

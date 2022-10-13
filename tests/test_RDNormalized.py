@@ -15,7 +15,7 @@ from expected_normalized_results import expected
 def compare_results(unit, result, expected):
     unit.assertEqual(result[0], expected[0])
     for x,y in zip(result[1:], expected[1:]):
-        unit.assertAlmostEqual(x,y)
+        unit.assertAlmostEqual(x,y, 5)
 
 class TestCase(unittest.TestCase):
     def testHaveNormalizations(self):
@@ -53,3 +53,6 @@ class TestCase(unittest.TestCase):
             if os.path.exists(storefname):
                 shutil.rmtree(storefname)
                 
+if __name__ == '__main__':  #pragma: no cover
+    unittest.main()
+

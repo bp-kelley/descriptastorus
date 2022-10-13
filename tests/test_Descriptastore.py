@@ -7,6 +7,7 @@ from descriptastorus import descriptors
 import logging, struct
 import contextlib, tempfile, os, shutil, sys, shutil
 import datahook
+make_store.DEFAULT_KEYSTORE = "dbmstore"
 
 logging.getLogger().setLevel(logging.DEBUG)
 

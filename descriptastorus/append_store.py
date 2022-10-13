@@ -35,9 +35,12 @@ from rdkit.Chem import AllChem
 import pickle
 import time, os, sys, numpy, shutil
 import logging
-from .make_store import process, processInchi, getJobsAndNames, getJobs, props
+from .make_store import (process, processInchi, getJobsAndNames, getJobs,
+                         init_props_from_store)
 import multiprocessing, traceback
 from io import StringIO
+
+logger = logging.getLogger("descriptastorus")
 
 from descriptastorus import MolFileIndex, raw
 try:
@@ -100,10 +103,6 @@ def append_smiles_file(src, dest, hasHeader):
     
 # not thread safe!
 def append_smiles(options):
-    # ugly
-    while props:
-        props.pop()
-        
     # to test molecule
     
     # make the storage directory
@@ -114,11 +113,10 @@ def append_smiles(options):
         storageOptions = pickle.load(f)
     dbdir = options.storage
     d = DescriptaStore(dbdir, mode=Mode.READONLY)
-    props.append( d.getDescriptorCalculator() )
-    properties = props[0]
+    properties = d.getDescriptorCalculator()
 
-    if d.inchikey and not kyotocabinet:
-        logging.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet")
+    if d.inchikey.STORE == "kyotostore" and not kyotocabinet:
+        logger.error("Current store requires kyotocabinet which is not installed")
         return False
 
     d.close()
@@ -147,7 +145,9 @@ def append_smiles(options):
         # never use more than the maximum number
         num_cpus = min(int(options.numprocs), multiprocessing.cpu_count())
             
-    pool = multiprocessing.Pool(num_cpus)
+    pool = multiprocessing.Pool(num_cpus,
+                                initializer = init_props_from_store,
+                                initargs = (dbdir,))
         
     sm = MolFileIndex.MakeSmilesIndex(orig_filename, indexdir,
                                       sep=options.seperator,
@@ -180,6 +180,8 @@ def append_smiles(options):
 
         if d.name:
             name_cabinet = d.name
+        else:
+            name_cabinet = None
 
         print ("Number of molecules to process", numstructs)
 
@@ -197,7 +199,7 @@ def append_smiles(options):
                 joblist, count = getJobs(sm, options, count, numstructs, batchsize, num_cpus)
                     
             if not joblist:
-                logging.debug("Stopping")
+                logger.debug("Stopping")
                 break
 
             t1 = time.time()
@@ -212,9 +214,9 @@ def append_smiles(options):
             for result in results:
                 if not badColumnWarning and len(result) == 0:
                     badColumnWarning = True
-                    logging.warning("no molecules processed in batch, check the smilesColumn")
-                    logging.warning("First 10 smiles:\n")
-                    logging.warning("\n".join(["%i: %s"%(i,sm.get(i)) for i in range(0, min(sm.N,10))]))
+                    logger.warning("no molecules processed in batch, check the smilesColumn")
+                    logger.warning("First 10 smiles:\n")
+                    logger.warning("\n".join(["%i: %s"%(i,sm.get(i)) for i in range(0, min(sm.N,10))]))
 
                 
             flattened = [val for sublist in results for val in sublist]
@@ -230,7 +232,7 @@ def append_smiles(options):
                         try:
                             s.putRow(i, v)
                         except ValueError:
-                            logging.exception("Columns: %s\nData: %r",
+                            logger.exception("Columns: %s\nData: %r",
                                               properties.GetColumns(),
                                               v)
                             raise
@@ -244,7 +246,7 @@ def append_smiles(options):
                         s.putRow(i, v)
                             
             storeTime = time.time() - t1
-            logging.info("Done with %s out of %s.  Processing time %0.2f store time %0.2f",
+            logger.info("Done with %s out of %s.  Processing time %0.2f store time %0.2f",
                 count, sm.N, procTime, storeTime)
 
         if d.inchikey:
@@ -256,28 +258,24 @@ def append_smiles(options):
                     cabinet.set(k, l)
                 else:
                     cabinet.set(k, inchies[k])
-            logging.info("... indexed in %2.2f seconds", (time.time()-t1))
+            logger.info("... indexed in %2.2f seconds", (time.time()-t1))
             
         if names:
             t1 = time.time()
             for name in sorted(names):
                 if name in name_cabinet or str.encode(name) in name_cabinet:
-                    logging.error("Name %s already exists in database,"
+                    logger.error("Name %s already exists in database,"
                                   " keeping idx %s (duplicate idx is %s)",
                                   name, name_cabinet[name], names[name])
                 else:
                     name_cabinet.set(name, names[name])
-            logging.info("... indexed in %2.2f seconds", (time.time()-t1))
+            logger.info("... indexed in %2.2f seconds", (time.time()-t1))
     finally:
         d.close()
         pool.close()
 
 # not thread safe!
 def append_store(options):
-    # ugly
-    while props:
-        props.pop()
-        
     # to test molecule
     
     # make the storage directory
@@ -288,17 +286,16 @@ def append_store(options):
         storageOptions = pickle.load(f)
     dbdir = options.storage
     d = DescriptaStore(dbdir, mode=Mode.READONLY)
-    props.append( d.getDescriptorCalculator() )
-    properties = props[0]
+    properties = d.getDescriptorCalculator()
 
-    if d.inchikey and not kyotocabinet:
-        logging.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet")
+    if d.inchikey.STORE == "kyotostore" and not kyotocabinet:
+        logger.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet or switch to dbm")
         return False
 
     d.close()
     d2 = DescriptaStore(options.smilesfile, mode=Mode.READONLY)
     if d2.getDescriptorNames(True) != d.getDescriptorNames(True):
-        logging.error("Descriptors are not compatible between stores")
+        logger.error("Descriptors are not compatible between stores")
         return False
 
     

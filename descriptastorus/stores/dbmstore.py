@@ -5,21 +5,27 @@ import dbm
 
 class DBMStore(KeyValueAPI):
     DB = dbm
+    STORE = "dbm"
     def open(self, fn, mode):
-        fn = self.get_actual_filename(fn)
+        filename = self._get_dbm_name(fn)
 
         if mode in [Mode.READONLY, Mode.READONCE]:
-            db = self.DB.open(fn, 'r')
+            db = self.DB.open(filename, 'r')
         elif mode ==  Mode.WRITE:
-            db = self.DB.open(fn, 'c')
+            db = self.DB.open(filename, 'c')
         elif mode ==  Mode.APPEND:
-            db = self.DB.open(fn, 'w')
+            db = self.DB.open(filename, 'w')
         else:
-            raise ValueError("Invalide mode %r for opening %s"%(mode, self.__class__.__name__))
+            raise ValueError("Invalid mode %r for opening %s"%(mode, self.__class__.__name__))
+
+        assert os.path.exists(self.get_actual_filename(fn)), self.get_actual_filename(fn)
         self.db = db
-        
-    def get_actual_filename(self, fn):
+
+    def _get_dbm_name(self, fn):
         return fn + ".dumbdb"
+    
+    def get_actual_filename(self, fn):
+        return self._get_dbm_name(fn) + ".db"
 
     def close(self):
         self.db.close()

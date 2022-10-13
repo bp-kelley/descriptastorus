@@ -7,6 +7,8 @@ from descriptastorus.descriptors.rdDescriptors import RDKit2D
 import contextlib, tempfile, os, shutil, sys
 import datahook
 
+make_store.DEFAULT_KEYSTORE = "dbmstore"
+
 one_smiles = "c1ccccc1 0"
 two_smiles = "c1ccccc1 1"
 

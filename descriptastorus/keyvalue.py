@@ -1,5 +1,6 @@
 from .raw import Mode
 import logging
+logger = logging.getLogger("descriptastorus")
     
 class KeyValueAPI:
     """Simple API to wrap various key value stores"""
@@ -13,7 +14,8 @@ class KeyValueAPI:
     def get_store(name):
         res = KeyValueAPI.REGISTRY.get(name, None)
         if res is None:
-            logging.warning("Failed to retrieve key value store type %r", name)
+            logger.exception("Failed to retrieve key value store type %r", name)
+            raise RuntimeError("Failed to retrieve key value store")
         return res
 
     def get_actual_filename(self, filename):

@@ -1,10 +1,14 @@
 from ..keyvalue import KeyValueAPI
 from ..raw import Mode
 import logging, os
+
+logger = logging.getLogger("descriptastorus")
+
 try:
     import kyotocabinet
 
     class KyotoStore(KeyValueAPI):
+        STORE = "kyotocabinet"
         def open(self, fn, mode):
             fn = self.get_actual_filename(fn)
 
@@ -36,7 +40,7 @@ try:
             return key in self.cabinet
         
     KeyValueAPI.register("kyotostore", KyotoStore)
-except:
+except ImportError:
     pass
 
 

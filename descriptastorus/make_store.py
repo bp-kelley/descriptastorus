@@ -39,7 +39,10 @@ import time, os, sys, numpy, shutil
 import logging
 from descriptastorus import MolFileIndex, raw
 from .keyvalue import KeyValueAPI
+from .DescriptaStore import get_options
 import tqdm
+
+logger = logging.getLogger("descriptastorus")
 
 # args.storage
 # args.smilesfile
@@ -52,11 +55,12 @@ import tqdm
 # args.nameColumn
 # args.seperator
 
+DEFAULT_KEYSTORE = "kyotostore"
 class MakeStorageOptions:
     def __init__(self, storage, smilesfile, 
                  hasHeader, smilesColumn, nameColumn, seperator,
                  descriptors, index_inchikey, batchsize=1000, numprocs=-1, verbose=False,
-                 keystore="kyotostore",
+                 keystore=None,
                  **kw):
         self.storage = storage
         self.smilesfile = smilesfile
@@ -69,33 +73,56 @@ class MakeStorageOptions:
         self.batchsize = int(batchsize)
         self.numprocs = numprocs
         self.verbose = verbose
-        self.keystore = keystore
+        self.keystore = keystore or DEFAULT_KEYSTORE
         if (kw):
-            logging.warning("%s: ignoring extra keywords: %r", self.__class__.__name__, kw)
+            logger.warning("%s: ignoring extra keywords: %r", self.__class__.__name__, kw)
 
 # ugly multiprocessing nonesense
-#  this makes this really not threadsafe
-props = []
+#  this initialized the property lists, must be called
+#  prior to making the store
+PROPS = []
+def init_props(descriptors):
+    global PROPS
+    PROPS.clear()
+    PROPS.append(MakeGenerator(descriptors.split(",")) )
+    return PROPS
+
+def init_props_from_store(dbdir):
+    global PROPS
+    options = get_options(dbdir)
+    generator = MakeGenerator(options['descriptors'].split(","))
+    PROPS.clear()
+    PROPS.append( generator )
+    return PROPS
+
+def is_empty(result):
+    if result is None:
+        return True
+    elif type(result) == list:
+        return len(result) == 0
+    
+    return result.shape == 0
 
 def process( job ):
     if job:
-        logging.debug("Running on %s jobs from index %s to %s",
+        logger.debug("Running on %s jobs from index %s to %s",
                         len(job), job[0][0], job[-1][0])
     else:
-        logging.warning("Empty joblist")
+        logger.warning("Empty joblist")
 
     res = []
     try:
         smiles = [s for _,s in job]
-        _, results = props[0].processSmiles(smiles)
+        _, results = PROPS[0].processSmiles(smiles)
+
         if len(smiles) != len(results):
-            logging.error("Failed batch from index %s to %s"%(
+            logger.error("Failed batch from index %s to %s"%(
                 job[0][0], job[-1][0]))
             return []
                           
-
         return tuple(((index, result)
-                      for (index,smiles), result in zip(job, results) if result))
+                      for (index,smiles), result in zip(job, results) if not is_empty(result)))
+    
     except Exception as x:
         import traceback
         traceback.print_exc()
@@ -104,23 +131,23 @@ def process( job ):
 
 def processInchi( job ):
     if job:
-        logging.debug("Running on %s jobs from index %s to %s",
+        logger.debug("Running on %s jobs from index %s to %s",
                         len(job), job[0][0], job[-1][0])
     else:
-        logging.warning("Empty joblist")
+        logger.warning("Empty joblist")
 
     res = []
     try:
         smiles = [s for _,s in job]
-        mols, results = props[0].processSmiles(smiles)
+        mols, results = PROPS[0].processSmiles(smiles)
         if len(smiles) != len(results):
-            logging.error("Failed batch from index %s to %s"%(
+            logger.error("Failed batch from index %s to %s"%(
                 job[0][0], job[-1][0]))
             return []
         
         for i, ((index, smiles), result) in enumerate(zip(job, results)):
             m = mols[i]
-            if result:
+            if not is_empty(result):
                 inchi = AllChem.MolToInchi(m)
                 key = AllChem.InchiToInchiKey(inchi)
                 res.append((index, result, inchi, key))
@@ -145,7 +172,7 @@ def getJobsAndNames(molindex, options, start, end, batchsize, nprocs, names):
                 offset = 1
             else:
                 offset = 0
-                logging.warning("Duplicated name %s at file index %s and %s",
+                logger.warning("Duplicated name %s at file index %s and %s",
                                 name, names[name]+offset, i+offset)
         names[name] = i
 
@@ -169,11 +196,7 @@ def getJobs(molindex, options, start, end, batchsize, nprocs):
 
 # not thread safe!
 def make_store(options):
-    while props:
-        props.pop()
-        
-    props.append( MakeGenerator(options.descriptors.split(",")) )
-    properties = props[0]
+    properties = init_props(options.descriptors)[0]
     # to test molecule
     
     inchiKey = options.index_inchikey
@@ -181,7 +204,7 @@ def make_store(options):
     if inchiKey and options.keystore:
         key_value_store = KeyValueAPI.get_store(options.keystore)
         if not key_value_store:
-            logging.error("Indexing inchikeys requires %s, please install", options.keystore)
+            logger.error("Indexing inchikeys requires %s, please install or use the dbm store", options.keystore)
             return False
     
     # make the storage directory
@@ -195,7 +218,9 @@ def make_store(options):
         # never use more than the maximum number
         num_cpus = min(int(options.numprocs), multiprocessing.cpu_count())
             
-    pool = multiprocessing.Pool(num_cpus)
+    pool = multiprocessing.Pool(num_cpus,
+                                initializer=init_props,
+                                initargs=(options.descriptors,))
 
     os.mkdir(options.storage)
     with open(os.path.join(options.storage, "__options__"), 'wb') as f:
@@ -209,7 +234,7 @@ def make_store(options):
                                       hasHeader = options.hasHeader,
                                       smilesColumn = options.smilesColumn,
                                       nameColumn = options.nameColumn)
-    logging.info("Creating descriptors for %s molecules...", sm.N)
+    logger.info("Creating descriptors for %s molecules...", sm.N)
 
                                       
     numstructs = sm.N
@@ -221,25 +246,27 @@ def make_store(options):
             cabinet = key_value_store()
             cabinet.open(inchi, Mode.WRITE)
         else:
-            logging.warning("Not logging inchi (see --index-inchkey)")
+            logger.warning("Not logging inchi (see --index-inchkey)")
             cabinet = None
 
         if options.nameColumn is not None and key_value_store:
-            logging.info("Creating name store")
+            logger.info("Creating name store")
             name = os.path.join(options.storage, "name")
             name_cabinet = key_value_store()
             name_cabinet.open(name, Mode.WRITE)
+            assert os.path.exists(name_cabinet.get_actual_filename(name)), name_cabinet.get_actual_filename(name)
         else:
-            logging.warning("Not storing name lookup (see --nameColumn)")
+            logger.warning("Not storing name lookup (see --nameColumn)")
             name_cabinet = None
 
-        logging.info("Number of molecules to process: %s", numstructs)
+        logger.info("Number of molecules to process: %s", numstructs)
         
         done = False
         count = 0
         numOutput = 0
         batchsize = options.batchsize
         badColumnWarning = False
+        
         inchies = {}
         names = {}
         if 1:
@@ -270,9 +297,9 @@ def make_store(options):
                     numOutput += len(result)
                     if numOutput == 0 and not badColumnWarning and len(result) == 0:
                         badColumnWarning = True
-                        logging.warning("no molecules processed in batch, check the smilesColumn")
-                        logging.warning("First 10 smiles:\n")
-                        logging.warning("\n".join(["%i: %s"%(i,sm.get(i)) for i in range(0, min(sm.N,10))]))
+                        logger.warning("no molecules processed in batch, check the smilesColumn")
+                        logger.warning("First 10 smiles:\n")
+                        logger.warning("\n".join(["%i: %s"%(i,sm.get(i)) for i in range(0, min(sm.N,10))]))
 
 
                 flattened = [val for sublist in results for val in sublist]
@@ -284,11 +311,11 @@ def make_store(options):
                 for result in flattened:
                     if options.index_inchikey:
                         i,v,inchi,key = result
-                        if v:
+                        if not is_empty(v):
                             try:
                                 s.putRow(i, v)
                             except ValueError:
-                                logging.exception("Columns: %s\nData: %r",
+                                logger.exception("Columns: %s\nData: %r",
                                                   properties.GetColumns(),
                                                   v)
                                 raise
@@ -299,26 +326,26 @@ def make_store(options):
 
                     else:
                         i,v = result
-                        if v:
+                        if not is_empty(v):
                             s.putRow(i, v)
 
                 storeTime = time.time() - t1
-                logging.debug("Done with %s out of %s.  Processing time %0.2f store time %0.2f",
+                logger.debug("Done with %s out of %s.  Processing time %0.2f store time %0.2f",
                     count, sm.N, procTime, storeTime)
 
         if cabinet and options.index_inchikey:
-            logging.info("Indexing inchies")
+            logger.info("Indexing inchies")
             t1 = time.time()
             for k in sorted(inchies):#tqdm.tqdm(sorted(inchies)):
                 cabinet.set(k, inchies[k])
-            logging.info("... indexed in %2.2f seconds", (time.time()-t1))
+            logger.info("... indexed in %2.2f seconds", (time.time()-t1))
             
         if name_cabinet:
             t1 = time.time()
-            logging.info("Indexing names")
+            logger.info("Indexing names")
             for name in sorted(names):#tqdm.tqdm(sorted(names)):
                 name_cabinet.set(name, names[name])
-            logging.info("... indexed in %2.2f seconds", (time.time()-t1))
+            logger.info("... indexed in %2.2f seconds", (time.time()-t1))
     finally:
         sm.close()
         s.close()

@@ -6,6 +6,8 @@ from descriptastorus import make_store, DescriptaStore
 from descriptastorus.descriptors.DescriptorGenerator import DescriptorGenerator
 import contextlib, tempfile, os, shutil, sys
 import datahook
+from descriptastorus import make_store
+make_store.DEFAULT_KEYSTORE = "dbmstore"
 
 one_smiles = "c1ccccc1 0"
 many_smiles = "\n".join( [ "C"*i + "c1ccccc1 " + str(i) for i in range(10) ] )
@@ -85,3 +87,5 @@ class TestCase(unittest.TestCase):
                 os.unlink(fname)
             if os.path.exists(storefname):
                 shutil.rmtree(storefname)
+if __name__ == '__main__':  #pragma: no cover
+    unittest.main()

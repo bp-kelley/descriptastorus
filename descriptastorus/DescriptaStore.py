@@ -36,6 +36,7 @@ import os, sys, contextlib, pickle
 from .keyvalue import KeyValueAPI
 
 import logging
+logger = logging.getLogger("descriptastorus")
 
 try:
     from .descriptors import MakeGenerator
@@ -61,6 +62,14 @@ class DescriptaStoreIter:
             raise
     def next(self):
         return self.__next__(self)
+
+def get_options(dbdir):
+    optionsfile = os.path.join(dbdir, "__options__")
+    if os.path.exists(optionsfile):
+        with open(optionsfile, 'rb') as f:
+            return pickle.load(f)
+    else:
+        raise IOError("Not a valid Descriptastore, no options file")
     
 class DescriptaStore:
     def __init__(self, dbdir, mode=Mode.READONLY):
@@ -92,20 +101,14 @@ class DescriptaStore:
         self.desctiporDB = dbdir
         self.db = raw.RawStore(dbdir, mode=mode)
         self.index = MolFileIndex.MolFileIndex(os.path.join(dbdir, "__molindex__"))
-        options = self.options = None
-        optionsfile = os.path.join(dbdir, "__options__")
-        if os.path.exists(optionsfile):
-            with open(optionsfile, 'rb') as f:
-                options = self.options = pickle.load(f)
-        else:
-            raise IOError("Not a valid Descriptastore, no options file")
+        options = self.options = get_options(dbdir)
         keystore = options.get("keystore", "kyotostore")
         
         key_store_type = None
         if keystore:
             key_store_type = KeyValueAPI.get_store(keystore)
             if not key_store_type:
-                logging.warning("Keystore %r not available, skipping", keystore)
+                logger.warning("Keystore %r not available, skipping", keystore)
 
         self.inchikey = self.name = None
         if key_store_type:
@@ -147,7 +150,7 @@ class DescriptaStore:
         try:
             return MakeGenerator(self.options['descriptors'].split(","))
         except:
-            logging.exception("Unable to make generator from store")
+            logger.exception("Unable to make generator from store")
             return None
 
     def getDescriptorNames(self, keepCalculatedFlags=False):
@@ -187,13 +190,13 @@ class DescriptaStore:
         """name -> returns the index of the given name"""
         if self.name is None:
             try:
-                logging.warning("Using slower memory intensive option")
-                logging.warning("Loading names...")
+                logger.warning("Using slower memory intensive option")
+                logger.warning("Loading names...")
                 self.name = {name:i for i, (moldata, name) in enumerate(self.index)}
-                logging.warning("...done loading")
+                logger.warning("...done loading")
                 print(self.name)
             except:
-                logging.exception("Names not available from original input")
+                logger.exception("Names not available from original input")
                 raise ValueError("Name index not available")
             assert self.name
 

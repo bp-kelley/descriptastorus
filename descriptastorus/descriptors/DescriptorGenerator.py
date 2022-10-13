@@ -1,3 +1,4 @@
+
 #  Copyright (c) 2018, Novartis Institutes for BioMedical Research Inc.
 #  All rights reserved.
 #
@@ -35,41 +36,17 @@ import pandas as pd
 import pandas_flavor as pf
 import sys
 import numpy as np
+
+logger = logging.getLogger("descriptastorus")
+
 # set to 0 to disable caching
-MAX_CACHE = 0
+MAX_CACHE = 1000
 
-import sys
-from numbers import Number
-from collections import deque
-from collections.abc import Set, Mapping
-
-
-ZERO_DEPTH_BASES = (str, bytes, Number, range, bytearray)
-
-
-def getsize(obj_0):
-    """Recursively iterate to sum size of object & members."""
-    _seen_ids = set()
-    def inner(obj):
-        obj_id = id(obj)
-        if obj_id in _seen_ids:
-            return 0
-        _seen_ids.add(obj_id)
-        size = sys.getsizeof(obj)
-        if isinstance(obj, ZERO_DEPTH_BASES):
-            pass # bypass remaining control flow and return
-        elif isinstance(obj, (tuple, list, Set, deque)):
-            size += sum(inner(i) for i in obj)
-        elif isinstance(obj, Mapping) or hasattr(obj, 'items'):
-            size += sum(inner(k) + inner(v) for k, v in getattr(obj, 'items')())
-        # Check for custom object instances - may subclass above too
-        if hasattr(obj, '__dict__'):
-            size += inner(vars(obj))
-        if hasattr(obj, '__slots__'): # can have __slots__ with __dict__
-            size += sum(inner(getattr(obj, s)) for s in obj.__slots__ if hasattr(obj, s))
-        return size
-    return inner(obj_0)
-
+def is_empty(array):
+    if hasattr(array, "size"):
+        return array.size == 0
+    return not array
+    
 class DescriptorGenerator:
     REGISTRY = {}
     NAME = None
@@ -77,7 +54,7 @@ class DescriptorGenerator:
         try:
             self.REGISTRY[self.NAME.lower()] = self
         except:
-            logging.exception("DescriptorGenerator must have a NAME (self.NAME)")
+            logger.exception("DescriptorGenerator must have a NAME (self.NAME)")
             raise
         # the columns to be actually calculated
         #  GetColumns returns more columns here.
@@ -97,7 +74,7 @@ class DescriptorGenerator:
     def GetColumns(self):
         """Returns [(name, numpy.dtype), ...] for all columns being computed"""
         if self.NAME:
-            return [ (self.NAME + "_calculated", numpy.bool) ] + self.columns
+            return [ (self.NAME + "_calculated", bool) ] + self.columns
         return self.columns
 
     def calculateMol(self, m, smiles, internalParsing):
@@ -123,33 +100,33 @@ class DescriptorGenerator:
         #  for storage.
         res = self.calculateMol(m, smiles, internalParsing)
         if None in res:
-            logging.error("None in res")
+            logger.error("None in res")
             columns = self.GetColumns()
 
             for idx,v in enumerate(res):
                 if v is None:
                     if self.NAME:
-                        logging.error("At least one result: %s(%s) failed: %s",
+                        logger.error("At least one result: %s(%s) failed: %s",
                                       self.NAME,
                                       columns[idx+1][0],
                                       smiles)
                         res[idx] = columns[idx+1][1]() # default value here
                     else:
-                        logging.error("At least one result: %s failed: %s",
+                        logger.error("At least one result: %s failed: %s",
                                       columns[idx][0],
                                       smiles)
                         res[idx] = columns[idx][1]() # default value here
 
-            logging.info("res %r", res)
+            logger.info("res %r", res)
             if type(res) == list:
                 res.insert(0, False)
             else:
-                np.insert(res, 0, 3)
+                res = np.concatenate([np.array([0]), res], axis=0)
         else:
             if type(res) == list:
                 res.insert(0, True)
             else:
-                np.insert(res, 0, -1)
+                res = np.concatenate([np.array([1]), res], axis=0)
 
         return res
     
@@ -206,11 +183,13 @@ class DescriptorGenerator:
         if MAX_CACHE:
             for i,smile in enumerate(smiles):
                 res,m = self.cache.get(smile, (None, None))
-                if res:
+                if not is_empty(res):
                     _results.append((i, res))
+                    self.cache_hit += 1
                     if keep_mols:
                         allmols.append(m)
                 else:
+                    self.cache_miss += 1
                     m = self.molFromSmiles(smile)
                     if m:
                         mols.append(m)
@@ -239,13 +218,12 @@ class DescriptorGenerator:
         # none cached
         elif len(_results) == 0:
             results = self.processMols(mols, goodsmiles, internalParsing=True)
-
             if MAX_CACHE:
                 if len(indices) == len(smiles):
                     for smile, res, m in zip(smiles, results, allmols):
                         self.cache[smile] = res, m
-                    
-                return mols, results
+
+                    return mols, results
 
             # default values are None
             all_results = [None] * len(smiles)
@@ -275,12 +253,16 @@ class DescriptorGenerator:
         raise NotImplementedError
         
 class Container(DescriptorGenerator):
+    # Note containers do NOT get stored in the registry
     def __init__(self, generators):
         self.generators = generators
         columns = self.columns = []
         for g in generators:
             columns.extend(g.GetColumns())
         self.cache = {}
+        self.cache_hit = 0
+        self.cache_miss = 0
+
 
     def processMol(self, m, smiles, internalParsing=False):
         results = []
@@ -310,7 +292,7 @@ def MakeGenerator( generator_names ):
       :result: DescriptorGenerator
     """
     if not len(generator_names):
-        logging.warning("MakeGenerator called with no generator names")
+        logger.warning("MakeGenerator called with no generator names")
         raise ValueError("MakeGenerator called with no generator names")
     generators = []
     for name in generator_names:
@@ -318,7 +300,7 @@ def MakeGenerator( generator_names ):
             d = DescriptorGenerator.REGISTRY[name.lower()]
             generators.append(d)
         except:
-            logging.exception("No DescriptorGenerator found named %s\nCurrently registered descriptors:\n\t%s",
+            logger.exception("No DescriptorGenerator found named %s\nCurrently registered descriptors:\n\t%s",
                               name,
                               "\n\t".join(sorted(DescriptorGenerator.REGISTRY.keys()))
             )

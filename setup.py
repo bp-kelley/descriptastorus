@@ -53,7 +53,8 @@ if not status:
     except:
         raise RunTimeError("git tags must be in the form release-x.y.z or simply x.y.z")
 else:
-    VERSION = "2.2.0"  # hardcode version
+    logging.error("Could not run git to get version information... using hard coded version which is likely incorrect")
+    VERSION = "2.6.0"  # hardcode version
 
 setup(
     name="descriptastorus",
