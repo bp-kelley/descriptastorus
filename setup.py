@@ -73,6 +73,7 @@ else:
 setup(
     name="descriptastorus",
     version=VERSION,
+    license='BSD',
     description="Descriptor storage and molecular file indexing",
     author="Brian Kelley",
     author_email="bkelley@relaytx.com",
