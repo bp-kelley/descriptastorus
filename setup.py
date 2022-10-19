@@ -29,7 +29,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-import sys
+import os, sys
 from setuptools import setup, find_packages
 
 try:
@@ -51,7 +51,21 @@ if not status:
         else:
             VERSION = "%s.%s" % (data[0], data[1])
     except:
-        raise RunTimeError("git tags must be in the form release-x.y.z or simply x.y.z")
+        raise RuntimeError("git tags must be in the form release-x.y.z or simply x.y.z")
+    directory = os.path.dirname(sys.argv[1])
+
+    lines = []
+    path = os.path.join(directory, "descriptastorus", "__init__.py")
+    with open(path) as fn:
+        for line in fn:
+            if line.find("__version__") == 0:
+                lines.append(f'__version__ = "{VERSION}"\n')
+            else:
+                lines.append(line)
+    with open(path, 'w') as w:
+        w.write("".join(lines))
+
+
 else:
     logging.error("Could not run git to get version information... using hard coded version which is likely incorrect")
     VERSION = "2.6.0"  # hardcode version
