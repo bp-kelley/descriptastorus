@@ -30,13 +30,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 import sys
-try:
-  import rdkit
-except:
-  print("Descriptastorus requires rkdit to function, this is not installable by pip", file=sys.stderr)
-  print(" see https://rdkit.org for more information", file=sys.stderr)
-  sys.exit(1)
-  
+
 from setuptools import setup, find_packages
 try:
   from commands import getstatusoutput
@@ -68,7 +62,7 @@ setup(name='descriptastorus',
       author='Brian Kelley',
       author_email='bkelley@relaytx.com',
       url='https://github/bp-kelley/descriptastorus',
-      install_requires=['pandas_flavor'],
+      install_requires=['pandas_flavor', 'rdkit'],
       test_suite='nose.collector',
       tests_require=['nose', 'pandas_flavor'],
       include_package_data=True,
