@@ -73,7 +73,7 @@ else:
 setup(
     name='descriptastorus',
     version=VERSION,
-    description='Descriptor storage and molecular file indexing',
+    description='Descriptor creation, storage and molecular file indexing',
     author='Brian Kelley',
     author_email='bkelley@relaytx.com',
     url='https://github/bp-kelley/descriptastorus',
@@ -89,6 +89,5 @@ setup(
     },
     
     packages = find_packages())
-)
 
 
