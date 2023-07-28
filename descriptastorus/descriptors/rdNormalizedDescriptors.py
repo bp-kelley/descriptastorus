@@ -46,7 +46,15 @@ for name, (dist, params, minV,maxV,avg,std) in dists.dists.items():
     loc = params[-2]
     scale = params[-1]
 
+    if dist in ['gilbrat', 'gibrat']:
+        # fix change in scikit learn
+        if hasattr(dist, 'gilbrat'):
+            dist = 'gilbrat'
+        else:
+            dist = 'gibrat'
+            
     dist = getattr(st, dist)
+        
     
     # make the cdf with the parameters
     def cdf(v, dist=dist, arg=arg,loc=loc,scale=scale,minV=minV,maxV=maxV):
