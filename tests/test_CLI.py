@@ -7,6 +7,10 @@ from descriptastorus.descriptors.rdDescriptors import RDKit2D
 import tempfile, contextlib
 import logging, os, shutil
 from rdkit.Chem import AllChem
+import multiprocessing
+
+# the tests only work in fork mode when calling the CLI directly
+multiprocessing.set_start_method('fork')
 
 one_smiles = "c1ccccc1 0"
 many_smiles = "\n".join( [ "C"*i + "c1ccccc1 " + str(i) for i in range(10) ] + ["NOSTRUCT foo"] )
