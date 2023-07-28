@@ -213,7 +213,10 @@ class DescriptorGenerator:
         # all cached
         if len(_results) == len(smiles):
             all_results = [r[1] for r in _results]
-            return allmols, all_results
+            if keep_mols:
+                return allmols, all_results
+            else:
+                return all_results
         
         # none cached
         elif len(_results) == 0:
@@ -222,15 +225,18 @@ class DescriptorGenerator:
                 if len(indices) == len(smiles):
                     for smile, res, m in zip(smiles, results, allmols):
                         self.cache[smile] = res, m
-
-                    return mols, results
+                    if keep_mols:
+                        return mols, results
+                    return results
 
             # default values are None
             all_results = [None] * len(smiles)
             for idx,result,m in zip(indices, results, allmols):
                 self.cache[smiles[idx]] = result,m
                 all_results[idx] = result
-            return allmols, all_results
+            if keep_mols:
+                return allmols, all_results
+            return all_results
         # some cached
         else:
             results = self.processMols(mols, goodsmiles, internalParsing=True)
@@ -244,7 +250,9 @@ class DescriptorGenerator:
                 if MAX_CACHE:
                     self.cache[smiles[idx]] = result,m
                 all_results[idx] = result
-            return allmols, all_results
+            if keep_mols:
+                return allmols, all_results
+            return all_results
 
     def processCtab(self, ctab):
         raise NotImplementedError
