@@ -37,6 +37,7 @@ import numpy
 from rdkit.DataStructs import IntSparseIntVect
 from rdkit.DataStructs import ConvertToNumpyArray
 from .DescriptorGenerator import DescriptorGenerator
+import multiprocessing as mp
 import logging
 
 import sys
@@ -369,4 +370,79 @@ class RDKit2D(DescriptorGenerator):
 
 RDKit2D()
 
+if mp.get_start_method() == 'spawn':
+    from rdkit.Chem import AllChem
+    # required for tests to run, boo!
+    class RDKit2DSubset(RDKit2D):
+        NAME="RDKit2DSubset"
+        def __init__(self):
+            RDKit2D.__init__(self, properties=[
+                'ExactMolWt',
+                'NumAliphaticRings', 'NumAromaticCarbocycles',
+                'NumAromaticHeterocycles', 'NumAromaticRings'])
+    RDKit2DSubset()
+
+    class Canonicalize(DescriptorGenerator):
+        NAME="Canonicalize"
+        canonicalCount = 0
+        def GetColumns(self):
+            return [('count', numpy.float32)]
+
+        def molFromSmiles(self, smiles):
+            m = AllChem.MolFromSmiles(smiles)
+            m.SetProp("ccount", str(len(smiles)))
+            return m
+
+        def processMol(self, m, smiles, internalParsing):
+            assert internalParsing == True
+            return [int(m.GetProp("ccount"))]
+
+    Canonicalize()
     
+    class RDKit2DSubsetSmall(RDKit2D):
+        NAME="RDKit2DSubsetSmall"
+        def __init__(self):
+            RDKit2D.__init__(self, properties=[
+                'ExactMolWt',])
+
+    RDKit2DSubsetSmall()
+
+    class NanDescriptors(DescriptorGenerator):
+        NAME="NANDescriptors"
+        def GetColumns(self):
+            return [('a', numpy.int32),
+                    ('b', numpy.float32),
+                    ('c', numpy.float64),
+                    ('d', numpy.uint8)]
+
+        def processMol(self, m, smiles, internalParsing=False):
+            return [None]*4
+
+    NanDescriptors()
+
+    # this should store a calculated flag error
+    class NanDescriptorsWithCalcFlags(DescriptorGenerator):
+        NAME="NANDescriptorsWithCalcFlags"
+        def __init__(self):
+            DescriptorGenerator.__init__(self)
+            self.columns =[('a', numpy.int32),
+                           ('b', numpy.float32),
+                           ('c', numpy.float64),
+                           ('d', numpy.uint8)]
+
+        def calculateMol(self, m, smiles, internalParsing):
+            return [None]*4
+
+    NanDescriptorsWithCalcFlags()
+    
+    class NanDescriptors_MS(DescriptorGenerator):
+        NAME="NANDescriptors_MS"
+        def GetColumns(self):
+            return [('a', numpy.float32),
+                    ('b', numpy.float32),
+                    ('c', numpy.float32),
+                    ('d', numpy.float32)]
+
+        def processMol(self, m, smiles, internalParsing=False):
+            return [float('nan')]*4
+    NanDescriptors_MS()

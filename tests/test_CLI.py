@@ -9,9 +9,8 @@ import logging, os, shutil
 from rdkit.Chem import AllChem
 import multiprocessing
 
-# the tests only work in fork mode when calling the CLI directly
-multiprocessing.set_start_method('fork')
-
+logging.getLogger().setLevel(logging.INFO)
+make_store.DEFAULT_KEYSTORE = "dbmstore"
 one_smiles = "c1ccccc1 0"
 many_smiles = "\n".join( [ "C"*i + "c1ccccc1 " + str(i) for i in range(10) ] + ["NOSTRUCT foo"] )
 many_smiles2 = "\n".join( [ "C"*i + "c1ccccc1 " + str(i+11) for i in range(10) ] + ["NOSTRUCT foo2"] )
@@ -25,6 +24,9 @@ class RDKit2DSubset(RDKit2D):
             'NumAromaticHeterocycles', 'NumAromaticRings'])
 RDKit2DSubset()
 
+from descriptastorus.descriptors import MakeGenerator
+MakeGenerator(['rdkit2dsubset'])
+
 def toDict( v ):
     return {n:x for n,x in zip([
             'RDKit2DSubset_calculated', 'ExactMolWt',
@@ -33,7 +35,11 @@ def toDict( v ):
                                v)}
 
 class TestCase(unittest.TestCase):
+    def setUp(self):
+        RDKit2DSubset()
+        
     def testMakeStore(self):
+        print("*"*44)
         fname = tempfile.mktemp()+".smi"
         storefname = tempfile.mktemp()+".store"
         with open(fname, 'w') as f:
@@ -121,9 +127,9 @@ class TestCase(unittest.TestCase):
 
             opts = storus.parser.parse_args(args2)
             append_store.append_smiles(append_store.AppendStorageOptions(**vars(opts)))
-            
+
             with contextlib.closing(DescriptaStore(storefname)) as store:
-                
+                assert len(store) == 22, str(len(store))
                 for i in range(20):
                     m = store.molIndex().getRDMol(i)
                     if m:

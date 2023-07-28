@@ -115,8 +115,8 @@ def append_smiles(options):
     d = DescriptaStore(dbdir, mode=Mode.READONLY)
     properties = d.getDescriptorCalculator()
 
-    if d.inchikey and not kyotocabinet:
-        logger.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet")
+    if d.inchikey.STORE == "kyotostore" and not kyotocabinet:
+        logger.error("Current store requires kyotocabinet which is not installed")
         return False
 
     d.close()
@@ -180,6 +180,8 @@ def append_smiles(options):
 
         if d.name:
             name_cabinet = d.name
+        else:
+            name_cabinet = None
 
         print ("Number of molecules to process", numstructs)
 
@@ -286,8 +288,8 @@ def append_store(options):
     d = DescriptaStore(dbdir, mode=Mode.READONLY)
     properties = d.getDescriptorCalculator()
 
-    if d.inchikey and not kyotocabinet:
-        logger.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet")
+    if d.inchikey.STORE == "kyotostore" and not kyotocabinet:
+        logger.warning("Indexing inchikeys requires kyotocabinet, please install kyotocabinet or switch to dbm")
         return False
 
     d.close()

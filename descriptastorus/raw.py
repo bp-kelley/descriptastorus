@@ -188,8 +188,8 @@ class RawStore:
     def get(self, idx):
         """Return the row at idx"""
         if idx >= self.N or idx < 0:
-            raise IndexError("Index out of range %s (0 < %s)",
-                             idx, self.N)
+            raise IndexError("Index out of range %s (0 < %s)"%(
+                             idx, self.N))
         offset = idx * self.rowbytes
         try:
             self.f.seek(offset,0)

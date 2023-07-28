@@ -29,16 +29,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
+<<<<<<< HEAD
 import sys
 
+=======
+import os, sys
+>>>>>>> master
 from setuptools import setup, find_packages
+
 try:
-  from commands import getstatusoutput
+    from commands import getstatusoutput
 except ImportError:
-  from subprocess import getstatusoutput
+    from subprocess import getstatusoutput
 
 import logging
-  
+
 status, output = getstatusoutput("git describe --tags")
 
 if not status:
@@ -47,14 +52,28 @@ if not status:
         if len(data) == 1:
             VERSION = data[0]
         elif data and data[0].lower() == "release":
-            VERSION = "%s.%s"%(data[1], data[2])
+            VERSION = "%s.%s" % (data[1], data[2])
         else:
-            VERSION = "%s.%s"%(data[0], data[1])
+            VERSION = "%s.%s" % (data[0], data[1])
     except:
-        raise RunTimeError("git tags must be in the form release-x.y.z or simply x.y.z")
+        raise RuntimeError("git tags must be in the form release-x.y.z or simply x.y.z")
+    directory = os.path.dirname(sys.argv[1])
+
+    lines = []
+    path = os.path.join(directory, "descriptastorus", "__init__.py")
+    with open(path) as fn:
+        for line in fn:
+            if line.find("__version__") == 0:
+                lines.append(f'__version__ = "{VERSION}"\n')
+            else:
+                lines.append(line)
+    with open(path, 'w') as w:
+        w.write("".join(lines))
+
+
 else:
-  print('descriptastorus requires git to get the versioning info, please install git', file=sys.stderr)
-  sys.exit(1)
+    logging.error("Could not run git to get version information... using hard coded version which is likely incorrect")
+    VERSION = "2.6.0"  # hardcode version
 
 setup(name='descriptastorus',
       version=VERSION,
@@ -74,4 +93,6 @@ setup(name='descriptastorus',
           },
                                                             
       packages = find_packages())
+)
+
 

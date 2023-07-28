@@ -55,11 +55,12 @@ logger = logging.getLogger("descriptastorus")
 # args.nameColumn
 # args.seperator
 
+DEFAULT_KEYSTORE = "kyotostore"
 class MakeStorageOptions:
     def __init__(self, storage, smilesfile, 
                  hasHeader, smilesColumn, nameColumn, seperator,
                  descriptors, index_inchikey, batchsize=1000, numprocs=-1, verbose=False,
-                 keystore="kyotostore",
+                 keystore=None,
                  **kw):
         self.storage = storage
         self.smilesfile = smilesfile
@@ -72,7 +73,7 @@ class MakeStorageOptions:
         self.batchsize = int(batchsize)
         self.numprocs = numprocs
         self.verbose = verbose
-        self.keystore = keystore
+        self.keystore = keystore or DEFAULT_KEYSTORE
         if (kw):
             logger.warning("%s: ignoring extra keywords: %r", self.__class__.__name__, kw)
 
@@ -203,7 +204,7 @@ def make_store(options):
     if inchiKey and options.keystore:
         key_value_store = KeyValueAPI.get_store(options.keystore)
         if not key_value_store:
-            logger.error("Indexing inchikeys requires %s, please install", options.keystore)
+            logger.error("Indexing inchikeys requires %s, please install or use the dbm store", options.keystore)
             return False
     
     # make the storage directory
@@ -253,6 +254,7 @@ def make_store(options):
             name = os.path.join(options.storage, "name")
             name_cabinet = key_value_store()
             name_cabinet.open(name, Mode.WRITE)
+            assert os.path.exists(name_cabinet.get_actual_filename(name)), name_cabinet.get_actual_filename(name)
         else:
             logger.warning("Not storing name lookup (see --nameColumn)")
             name_cabinet = None
@@ -264,6 +266,7 @@ def make_store(options):
         numOutput = 0
         batchsize = options.batchsize
         badColumnWarning = False
+        
         inchies = {}
         names = {}
         if 1:
