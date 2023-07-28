@@ -70,24 +70,25 @@ else:
     logging.error("Could not run git to get version information... using hard coded version which is likely incorrect")
     VERSION = "2.6.0"  # hardcode version
 
-setup(name='descriptastorus',
-      version=VERSION,
-      description='Descriptor storage and molecular file indexing',
-      author='Brian Kelley',
-      author_email='bkelley@relaytx.com',
-      url='https://github/bp-kelley/descriptastorus',
-      install_requires=['pandas_flavor', 'rdkit', 'scipy', 'numpy'],
-      test_suite='nose.collector',
-      tests_require=['nose', 'pandas_flavor'],
-      include_package_data=True,
-      entry_points={
-          'console_scripts': [
-              'storus = descriptastorus.cli.storus:main',
-              'storus-validate = descriptastorus.cli.validate:main',
-              ]
-          },
-                                                            
-      packages = find_packages())
+setup(
+    name='descriptastorus',
+    version=VERSION,
+    description='Descriptor storage and molecular file indexing',
+    author='Brian Kelley',
+    author_email='bkelley@relaytx.com',
+    url='https://github/bp-kelley/descriptastorus',
+    install_requires=['pandas_flavor', 'rdkit', 'scipy', 'numpy'],
+    test_suite='nose.collector',
+    tests_require=['nose', 'pandas_flavor'],
+    include_package_data=True,
+    entry_points={
+        'console_scripts': [
+            'storus = descriptastorus.cli.storus:main',
+            'storus-validate = descriptastorus.cli.validate:main',
+        ]
+    },
+    
+    packages = find_packages())
 )
 
 

@@ -7,7 +7,6 @@ from descriptastorus.descriptors.rdDescriptors import RDKit2D
 import tempfile, contextlib
 import logging, os, shutil
 from rdkit.Chem import AllChem
-import multiprocessing
 
 logging.getLogger().setLevel(logging.INFO)
 make_store.DEFAULT_KEYSTORE = "dbmstore"
