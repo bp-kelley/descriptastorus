@@ -12,10 +12,10 @@ one_smiles = "c1ccccc1 0"
 many_smiles = "\n".join( [ "C"*i + "c1ccccc1 " + str(i) for i in range(10) ] )
 from expected_normalized_results import expected
 
-def compare_results(unit, result, expected):
+def compare_results(unit, result, expected, columns):
     unit.assertEqual(result[0], expected[0])
-    for x,y in zip(result[1:], expected[1:]):
-        unit.assertAlmostEqual(x,y, 5)
+    for i, (x,y) in enumerate(zip(result[1:], expected[1:])):
+        unit.assertAlmostEqual(x,y, 5, msg="At %s"%columns[i+1][0])
 
 class TestCase(unittest.TestCase):
     def testHaveNormalizations(self):
@@ -45,7 +45,7 @@ class TestCase(unittest.TestCase):
             with contextlib.closing(DescriptaStore(storefname)) as store:
                 for i in range(10):
                     r = store.descriptors().get(i)
-                    compare_results(self, r, expected[i])
+                    compare_results(self, r, expected[i], generator.GetColumns())
 
         finally:
             if os.path.exists(fname):
