@@ -48,7 +48,7 @@ for name, (dist, params, minV,maxV,avg,std) in dists.dists.items():
 
     if dist in ['gilbrat', 'gibrat']:
         # fix change in scikit learn
-        if hasattr(dist, 'gilbrat'):
+        if hasattr(st, 'gilbrat'):
             dist = 'gilbrat'
         else:
             dist = 'gibrat'
