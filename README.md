@@ -46,6 +46,7 @@ Currently registered descriptors:
 	* morganfeature3counts
 	* rdkit2d
 	* rdkit2dnormalized
+        * rdkit2dhistogramnormalized - much faster version of rdkit2dnormalized
 	* rdkitfpbits
 
 Descriptors are input as a tuple or list to the generator.
