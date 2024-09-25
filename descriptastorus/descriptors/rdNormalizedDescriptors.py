@@ -45,6 +45,13 @@ for name, (dist, params, minV,maxV,avg,std) in dists.dists.items():
     arg = params[:-2]
     loc = params[-2]
     scale = params[-1]
+    
+    if dist in ['gilbrat', 'gibrat']:
+        # fix change in scikit learn
+        if hasattr(st, 'gilbrat'):
+            dist = 'gilbrat'
+        else:
+            dist = 'gibrat'
 
     if dist in ['gilbrat', 'gibrat']:
         # fix change in scikit learn
@@ -67,11 +74,11 @@ for name, (dist, params, minV,maxV,avg,std) in dists.dists.items():
 #    if name not in cdfs:
 #        logger.warning("No normalization for %s", name)
 
-def applyNormalizedFunc(name, m):
+def applyNormalizedFunc(funcs, name, m):
     if name not in cdfs:
         return 0.0
     try:
-        return cdfs[name](rdDescriptors.applyFunc(name,m))
+        return cdfs[name](rdDescriptors.applyFunc(funcs, name,m))
     except:
         logger.exception("Could not compute %s for molecule", name)
         return 0.0
@@ -84,7 +91,7 @@ class RDKit2DNormalized(rdDescriptors.RDKit2D):
     NAME = "RDKit2DNormalized"
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        res = [ applyNormalizedFunc(name, m) for name, _ in self.columns ]
+        res = [ applyNormalizedFunc(self.funcs, name, m) for name, _ in self.columns ]
         return res   
     
 RDKit2DNormalized()
@@ -100,11 +107,11 @@ for name, bins in hists.hists.items():
     
     histcdfs[name] = histcdf
 
-def applyHistogramNormalizedFunc(name, m):
+def applyHistogramNormalizedFunc(funcs, name, m):
     if name not in cdfs:
         return 0.0
     try:
-        return histcdfs[name](rdDescriptors.applyFunc(name,m))
+        return histcdfs[name](rdDescriptors.applyFunc(self,funcs, name,m))
     except:
         logging.exception("Could not compute %s for molecule", name)
         return 0.0
@@ -120,7 +127,7 @@ class RDKit2DHistogramNormalized(rdDescriptors.RDKit2D):
     NAME = "RDKit2DHistogramNormalized"
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        res = [ applyHistogramNormalizedFunc(name, m) for name, _ in self.columns ]
+        res = [ applyHistogramNormalizedFunc(self.funcs, name, m) for name, _ in self.columns ]
         return res   
     
 RDKit2DHistogramNormalized()
