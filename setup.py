@@ -68,7 +68,7 @@ if not status:
 
 else:
     logging.error("Could not run git to get version information... using hard coded version which is likely incorrect")
-    VERSION = "2.5.1"  # hardcode version
+    VERSION = "2.7.0"  # hardcode version
 
 setup(
     name='descriptastorus',

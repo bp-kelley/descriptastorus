@@ -34,4 +34,4 @@ from .mode import Mode
 
 # try and load key stores
 from . import stores
-__version__ = "2.5.0.19"
+__version__ = "2.7.0"

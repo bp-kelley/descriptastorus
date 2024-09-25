@@ -9,13 +9,18 @@ import contextlib, tempfile, os, shutil, sys
 import datahook
 
 one_smiles = "c1ccccc1 0"
-many_smiles = "\n".join( [ "C"*i + "c1ccccc1 " + str(i) for i in range(10) ] )
+all_smiles = [ "C"*i + "c1ccccc1 " + str(i) for i in range(10) ]
+many_smiles = "\n".join( all_smiles )
 from expected_normalized_results import expected
 
-def compare_results(unit, result, expected, columns):
+def compare_results(unit, result, idx, smiles, expected, columns):
     unit.assertEqual(result[0], expected[0])
     for i, (x,y) in enumerate(zip(result[1:], expected[1:])):
-        unit.assertAlmostEqual(x,y, 5, msg="At %s"%columns[i+1][0])
+        try:
+            unit.assertAlmostEqual(x,y, 5, msg=f"{idx} {smiles} at %s"%columns[i+1][0])
+        except Exception as e:
+            return str(e)
+    return None
 
 class TestCase(unittest.TestCase):
     def testHaveNormalizations(self):
@@ -42,11 +47,16 @@ class TestCase(unittest.TestCase):
             make_store.make_store(opts)
             generator = DescriptorGenerator.REGISTRY["RDKit2DNormalized".lower()]
             results = []
+            fails = []
             with contextlib.closing(DescriptaStore(storefname)) as store:
                 for i in range(10):
                     r = store.descriptors().get(i)
-                    compare_results(self, r, expected[i], generator.GetColumns())
+                    fail = compare_results(self, r, i, all_smiles[i], expected[i], generator.GetColumns())
+                    if fail:
+                        fails.append(fail)
 
+            if fails:
+                raise Exception("\n".join(fails))
         finally:
             if os.path.exists(fname):
                 os.unlink(fname)

@@ -40,7 +40,6 @@ import logging
 from descriptastorus import MolFileIndex, raw
 from .keyvalue import KeyValueAPI
 from .DescriptaStore import get_options
-import tqdm
 
 logger = logging.getLogger("descriptastorus")
 
@@ -55,7 +54,9 @@ logger = logging.getLogger("descriptastorus")
 # args.nameColumn
 # args.seperator
 
-DEFAULT_KEYSTORE = "kyotostore"
+# we used to use kyotocabinet which is not longer maintained or available
+#  use the dumb store as the default for now but probably move to leveldb
+DEFAULT_KEYSTORE = "dbmstore"
 class MakeStorageOptions:
     def __init__(self, storage, smilesfile, 
                  hasHeader, smilesColumn, nameColumn, seperator,
