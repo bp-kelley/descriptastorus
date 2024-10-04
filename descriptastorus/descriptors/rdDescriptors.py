@@ -29,7 +29,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 from __future__ import print_function
-from . import rdkit_fixes
 from rdkit import Chem
 from rdkit.Chem import Descriptors, Fragments
 from rdkit.Chem import rdFingerprintGenerator
@@ -39,6 +38,7 @@ from rdkit.DataStructs import ConvertToNumpyArray
 from .DescriptorGenerator import DescriptorGenerator
 import multiprocessing as mp
 import logging
+
 
 import sys
 logger = logging.getLogger("descriptastorus")
@@ -353,8 +353,8 @@ RDKIT_PROPS = {"1.0.0": ['BalabanJ', 'BertzCT', 'Chi0', 'Chi0n', 'Chi0v', 'Chi1'
 CURRENT_VERSION = "1.0.0"
 
 FUNCS = {name:func for name, func in Descriptors.descList}
-# fr_unbrnc_alkane changed in rdkit 2024, this restores the computation for
-#  the 1.0.0 descriptors
+# fr_unbrnc_alkane changed in rdkit 2024.03, this restores the computation for
+#  the v1.0.0 descriptors
 FUNCS_V1 = {name:func for name, func in Descriptors.descList}
 def _fr_unbrch_alkane_v1(mol, pattern=Chem.MolFromSmarts('[R0;D2][R0;D2][R0;D2][R0;D2]')):
     return Fragments._CountMatches(mol, pattern, unique=True)
@@ -363,7 +363,6 @@ FUNCS_V1['fr_unbrch_alkane'] = _fr_unbrch_alkane_v1
 
 def applyFunc(functions, name, m):
     try:
-        print("==", name)
         return functions[name](m)
     except:
         logger.exception("function application failed (%s->%s)",
@@ -374,8 +373,16 @@ def applyFunc(functions, name, m):
 class RDKit2D(DescriptorGenerator):
     """Computes all RDKit Descriptors"""
     NAME = "RDKit2D"
-    def __init__(self, properties=RDKIT_PROPS[CURRENT_VERSION]):
+    def __init__(self, properties=None, version=CURRENT_VERSION):
+        f"""Initialize the rdkit properties
+        Arguments:
+           properties: optional list of properties to compute, if None use the properties
+                       specified by version. [default None]
+           version: the version of the properties to use.  [default {CURRENT_VERSION!r}
+        """
         DescriptorGenerator.__init__(self)
+        properties = properties or RDKIT_PROPS[version]
+        
         # specify names and numpy types for all columns
         if CURRENT_VERSION == "1.0.0":
             self.funcs = FUNCS_V1
