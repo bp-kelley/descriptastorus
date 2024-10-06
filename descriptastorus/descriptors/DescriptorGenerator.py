@@ -39,9 +39,6 @@ import numpy as np
 
 logger = logging.getLogger("descriptastorus")
 
-# set to 0 to disable caching
-MAX_CACHE = 1000
-
 def is_empty(array):
     if hasattr(array, "size"):
         return array.size == 0
@@ -50,6 +47,7 @@ def is_empty(array):
 class DescriptorGenerator:
     REGISTRY = {}
     NAME = None
+    MAX_CACHE = 1000 # set to 0 to disable caching
     def __init__(self):
         try:
             self.REGISTRY[self.NAME.lower()] = self
@@ -180,7 +178,7 @@ class DescriptorGenerator:
         goodsmiles = []
         _results = []
 
-        if MAX_CACHE:
+        if self.MAX_CACHE:
             for i,smile in enumerate(smiles):
                 res,m = self.cache.get(smile, (None, None))
                 if not is_empty(res):
@@ -207,7 +205,7 @@ class DescriptorGenerator:
                 if keep_mols:
                     allmols.append(m)
                         
-        if len(smiles) + len(self.cache) > MAX_CACHE:
+        if len(smiles) + len(self.cache) > self.MAX_CACHE:
             self.cache.clear()
             
         # all cached
@@ -221,7 +219,7 @@ class DescriptorGenerator:
         # none cached
         elif len(_results) == 0:
             results = self.processMols(mols, goodsmiles, internalParsing=True)
-            if MAX_CACHE:
+            if self.MAX_CACHE:
                 if len(indices) == len(smiles):
                     for smile, res, m in zip(smiles, results, allmols):
                         self.cache[smile] = res, m
@@ -247,7 +245,7 @@ class DescriptorGenerator:
 
             # grab processed
             for idx,result,m in zip(indices, results, allmols):
-                if MAX_CACHE:
+                if self.MAX_CACHE:
                     self.cache[smiles[idx]] = result,m
                 all_results[idx] = result
             if keep_mols:
