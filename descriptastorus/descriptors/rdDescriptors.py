@@ -29,7 +29,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 from __future__ import print_function
-from . import rdkit_fixes
 from rdkit import Chem
 from rdkit.Chem import Descriptors, Fragments
 from rdkit.Chem import rdFingerprintGenerator
@@ -39,6 +38,7 @@ from rdkit.DataStructs import ConvertToNumpyArray
 from .DescriptorGenerator import DescriptorGenerator
 import multiprocessing as mp
 import logging
+
 
 import sys
 logger = logging.getLogger("descriptastorus")
@@ -72,7 +72,7 @@ class Morgan(DescriptorGenerator):
         self.gen = rdFingerprintGenerator.GetMorganGenerator(radius=self.radius, fpSize=self.nbits)
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = to_np(self.gen(m).GetFingerprint(), self.nbits)
+        counts = to_np(self.gen.GetFingerprint(m), self.nbits)
         return counts        
 
 Morgan()
@@ -122,7 +122,7 @@ class ChiralMorgan(DescriptorGenerator):
 
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = to_np(self.gen().GetFingerprint(m), self.nbits)
+        counts = to_np(self.gen.GetFingerprint(m), self.nbits)
         return counts        
 
 ChiralMorgan()
@@ -173,7 +173,7 @@ class FeatureMorgan(DescriptorGenerator):
 
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = to_np(self.gen().GetFingerprint(m), self.nbits)
+        counts = to_np(self.gen.GetFingerprint(m), self.nbits)
         return counts        
 
 
@@ -227,7 +227,7 @@ class AtomPair(DescriptorGenerator):
                                                                fpSize=self.nbits)
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = to_np(self.gen().GetFingerprint(m), self.nbits)
+        counts = to_np(self.gen.GetFingerprint(m), self.nbits)
         return counts        
 
 AtomPair()
@@ -353,17 +353,62 @@ RDKIT_PROPS = {"1.0.0": ['BalabanJ', 'BertzCT', 'Chi0', 'Chi0n', 'Chi0v', 'Chi1'
 CURRENT_VERSION = "1.0.0"
 
 FUNCS = {name:func for name, func in Descriptors.descList}
-# fr_unbrnc_alkane changed in rdkit 2024, this restores the computation for
-#  the 1.0.0 descriptors
+# fr_unbrnc_alkane changed in rdkit 2024.03, this restores the computation for
+#  the v1.0.0 descriptors
 FUNCS_V1 = {name:func for name, func in Descriptors.descList}
 def _fr_unbrch_alkane_v1(mol, pattern=Chem.MolFromSmarts('[R0;D2][R0;D2][R0;D2][R0;D2]')):
     return Fragments._CountMatches(mol, pattern, unique=True)
 
 FUNCS_V1['fr_unbrch_alkane'] = _fr_unbrch_alkane_v1
 
+try:
+    import rdkit
+    from rdkit.Chem import rdFingerprintGenerator
+    if hasattr(rdFingerprintGenerator, "GetMorganGenerator") and rdkit.__version__ == '2024.03.5':
+        def _FingerprintDensity(mol, func, *args, **kwargs):
+          aname = f'_{func.__name__}_{args}'
+          if hasattr(mol, aname):
+            fp = getattr(mol, aname)
+          else:
+            fp = func(*((mol, ) + args), **kwargs)
+            setattr(mol, aname, fp)
+          if hasattr(fp, 'GetNumOnBits'):
+            val = fp.GetNumOnBits()
+          else:
+            val = len(fp.GetNonzeroElements())
+          num_heavy_atoms = mol.GetNumHeavyAtoms()
+          if num_heavy_atoms == 0:
+            res = 0.0
+          else:
+            res = float(val) / num_heavy_atoms
+          return res
+
+
+        def _getMorganCountFingerprint(mol, radius):
+          fpg = rdFingerprintGenerator.GetMorganGenerator(radius)
+          return fpg.GetSparseCountFingerprint(mol)
+
+
+        def FpDensityMorgan1(x):
+          return _FingerprintDensity(x, _getMorganCountFingerprint, 1)
+
+
+        def FpDensityMorgan2(x):
+          return _FingerprintDensity(x, _getMorganCountFingerprint, 2)
+
+
+        def FpDensityMorgan3(x):
+          return _FingerprintDensity(x, _getMorganCountFingerprint, 3)
+    
+        FUNCS_V1['FpDensityMorgan1'] = FpDensityMorgan1
+        FUNCS_V1['FpDensityMorgan2'] = FpDensityMorgan2
+        FUNCS_V1['FpDensityMorgan3'] = FpDensityMorgan3
+except ImportError:
+    pass
+
+
 def applyFunc(functions, name, m):
     try:
-        print("==", name)
         return functions[name](m)
     except:
         logger.exception("function application failed (%s->%s)",
@@ -374,8 +419,16 @@ def applyFunc(functions, name, m):
 class RDKit2D(DescriptorGenerator):
     """Computes all RDKit Descriptors"""
     NAME = "RDKit2D"
-    def __init__(self, properties=RDKIT_PROPS[CURRENT_VERSION]):
+    def __init__(self, properties=None, version=CURRENT_VERSION):
+        f"""Initialize the rdkit properties
+        Arguments:
+           properties: optional list of properties to compute, if None use the properties
+                       specified by version. [default None]
+           version: the version of the properties to use.  [default {CURRENT_VERSION!r}
+        """
         DescriptorGenerator.__init__(self)
+        properties = properties or RDKIT_PROPS[version]
+        
         # specify names and numpy types for all columns
         if CURRENT_VERSION == "1.0.0":
             self.funcs = FUNCS_V1
