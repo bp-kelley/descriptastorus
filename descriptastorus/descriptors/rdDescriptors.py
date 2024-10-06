@@ -72,7 +72,7 @@ class Morgan(DescriptorGenerator):
         self.gen = rdFingerprintGenerator.GetMorganGenerator(radius=self.radius, fpSize=self.nbits)
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = to_np(self.gen(m).GetFingerprint(), self.nbits)
+        counts = to_np(self.gen.GetFingerprint(m), self.nbits)
         return counts        
 
 Morgan()
@@ -122,7 +122,7 @@ class ChiralMorgan(DescriptorGenerator):
 
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = to_np(self.gen().GetFingerprint(m), self.nbits)
+        counts = to_np(self.gen.GetFingerprint(m), self.nbits)
         return counts        
 
 ChiralMorgan()
@@ -173,7 +173,7 @@ class FeatureMorgan(DescriptorGenerator):
 
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = to_np(self.gen().GetFingerprint(m), self.nbits)
+        counts = to_np(self.gen.GetFingerprint(m), self.nbits)
         return counts        
 
 
@@ -227,7 +227,7 @@ class AtomPair(DescriptorGenerator):
                                                                fpSize=self.nbits)
 
     def calculateMol(self, m, smiles, internalParsing=False):
-        counts = to_np(self.gen().GetFingerprint(m), self.nbits)
+        counts = to_np(self.gen.GetFingerprint(m), self.nbits)
         return counts        
 
 AtomPair()
@@ -360,6 +360,52 @@ def _fr_unbrch_alkane_v1(mol, pattern=Chem.MolFromSmarts('[R0;D2][R0;D2][R0;D2][
     return Fragments._CountMatches(mol, pattern, unique=True)
 
 FUNCS_V1['fr_unbrch_alkane'] = _fr_unbrch_alkane_v1
+
+try:
+    import rdkit
+    from rdkit.Chem import rdFingerprintGenerator
+    if hasattr(rdFingerprintGenerator, "GetMorganGenerator") and rdkit.__version__ == '2024.03.5':
+        def _FingerprintDensity(mol, func, *args, **kwargs):
+          aname = f'_{func.__name__}_{args}'
+          if hasattr(mol, aname):
+            fp = getattr(mol, aname)
+          else:
+            fp = func(*((mol, ) + args), **kwargs)
+            setattr(mol, aname, fp)
+          if hasattr(fp, 'GetNumOnBits'):
+            val = fp.GetNumOnBits()
+          else:
+            val = len(fp.GetNonzeroElements())
+          num_heavy_atoms = mol.GetNumHeavyAtoms()
+          if num_heavy_atoms == 0:
+            res = 0.0
+          else:
+            res = float(val) / num_heavy_atoms
+          return res
+
+
+        def _getMorganCountFingerprint(mol, radius):
+          fpg = rdFingerprintGenerator.GetMorganGenerator(radius)
+          return fpg.GetSparseCountFingerprint(mol)
+
+
+        def FpDensityMorgan1(x):
+          return _FingerprintDensity(x, _getMorganCountFingerprint, 1)
+
+
+        def FpDensityMorgan2(x):
+          return _FingerprintDensity(x, _getMorganCountFingerprint, 2)
+
+
+        def FpDensityMorgan3(x):
+          return _FingerprintDensity(x, _getMorganCountFingerprint, 3)
+    
+        FUNCS_V1['FpDensityMorgan1'] = FpDensityMorgan1
+        FUNCS_V1['FpDensityMorgan2'] = FpDensityMorgan2
+        FUNCS_V1['FpDensityMorgan3'] = FpDensityMorgan3
+except ImportError:
+    pass
+
 
 def applyFunc(functions, name, m):
     try:
