@@ -305,6 +305,26 @@ class RDKitFPUnbranched(DescriptorGenerator):
 
 RDKitFPUnbranched()
 
+class RDKitFPBitsCounts(RDKitFPBits):
+    """Computes RDKitFp bitvector"""
+    NAME = "RDKitCounts"
+    def calculateMol(self, m, smiles, internalParsing=False):
+        v = self.gen.GetCountFingerprint(m)
+        return clip_sparse(v, self.nbits)
+
+RDKitFPBitsCounts()
+
+
+class RDKitFPUnbranchedCounts(RDKitFPUnbranched):
+    """Computes RDKitFp bitvector"""
+    NAME = "RDKitUnbranchedCounts"
+    def calculateMol(self, m, smiles, internalParsing=False):
+        v = self.gen.GetCountFingerprint(m)
+        return clip_sparse(v, self.nbits)
+
+
+RDKitFPUnbranchedCounts()
+
 
 RDKIT_PROPS = {"1.0.0": ['BalabanJ', 'BertzCT', 'Chi0', 'Chi0n', 'Chi0v', 'Chi1', 'Chi1n',
                          'Chi1v', 'Chi2n', 'Chi2v', 'Chi3n', 'Chi3v', 'Chi4n', 'Chi4v',
