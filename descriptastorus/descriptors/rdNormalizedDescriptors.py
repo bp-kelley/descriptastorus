@@ -111,7 +111,7 @@ def applyHistogramNormalizedFunc(funcs, name, m):
     if name not in cdfs:
         return 0.0
     try:
-        return histcdfs[name](rdDescriptors.applyFunc(self,funcs, name,m))
+        return histcdfs[name](rdDescriptors.applyFunc(funcs, name,m))
     except:
         logging.exception("Could not compute %s for molecule", name)
         return 0.0
