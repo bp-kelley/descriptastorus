@@ -1,59 +1,59 @@
 """Make histograms from all the distributions in the data directory
 n.b. only make new distributions
+
+Run from this directory:  python make_histdists.py
+New histograms are written into descriptastorus/descriptors/hists.py
 """
 import os
+import sys
 import gzip
 import numpy
-import functools, operator
-from numpy import inf,nan
-import bisect
-from descriptastorus.descriptors import hists
+from numpy import inf, nan
 
-def histcdf(x, dist, N):
-    p = bisect.bisect(dist, (x,))
-    if p < N:
-        return dist[p][1]
-    return 1.0
+# Load hists.py by path so this works without installing descriptastorus
+# (importing the package pulls in pandas, pandas_flavor, rdkit ...)
+HISTS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "..", "..", "descriptastorus", "descriptors",
+                          "hists.py")
+HISTS_FILE = os.path.normpath(HISTS_FILE)
+_ns = {}
+with open(HISTS_FILE) as f:
+    exec(f.read(), _ns)
 
 changed = False
-histdists = hists.hists
-for f in os.listdir('.'):
-    head, ext = os.path.splitext(f)
+histdists = _ns['hists']
+for fname in sorted(os.listdir('.')):
+    head, ext = os.path.splitext(fname)
     if ext == ".gz":
-        name = head.replace("d_", "")
+        name = head.replace("d_", "", 1)
         if name in histdists:
             print(f"Skipping {name}", file=sys.stderr)
             continue
-        
-        with gzip.open(f) as f:
-            txt = f.read()
-            dist = eval(txt)
-            if inf in dist:
-                dist = [x for x in dist if numpy.isfinite(x)]
-            n = min(1000,len(set(dist)))
-            hist, xaxis = numpy.histogram(dist, bins=n)
-            total = functools.reduce(operator.add, hist)
-            bins = []
-            last = 0.0
-            for value, x in zip(hist, xaxis):
-                assert value >= 0
-                last += value
-                bins.append((x, last/total))
-            N = len(dist)
-            for v in dist:
-                histcdf(v, dist, N)
-                
-            histdist[name] = bins
-            changed = True
 
-if changed:            
-    print("Writing temporary histsdist to data directory", file=sys.stderr)
-    text = repr(histdist)
+        with gzip.open(fname) as f:
+            txt = f.read()
+        dist = numpy.asarray(eval(txt), dtype=float)
+        # drop inf/-inf/nan, numpy.histogram can't bin them
+        dist = dist[numpy.isfinite(dist)]
+        n = min(1000, len(set(dist)))
+        hist, xaxis = numpy.histogram(dist, bins=n)
+        total = hist.sum()
+        bins = []
+        last = 0.0
+        for value, x in zip(hist, xaxis):
+            assert value >= 0
+            last += value
+            bins.append((float(x), float(last / total)))
+
+        print(f"Adding {name}", file=sys.stderr)
+        histdists[name] = bins
+        changed = True
+
+if changed:
+    print(f"Writing updated histograms to {HISTS_FILE}", file=sys.stderr)
+    text = repr(histdists)
     text = text.replace("],", "],\n\t")
-    filename = hists.__file__
-    if os.path.splitext(filename) == ".pyc":
-        filename = filename[:-1]
-        
-    open(filename, 'w').write(f"hists = {text}")
+    with open(HISTS_FILE, 'w') as f:
+        f.write(f"hists = {text}")
 else:
     print("No new datafiles added", file=sys.stderr)
